@@ -139,7 +139,7 @@ const StudentDashboard = () => {
                 <TabsContent value="history">
                   <HistoryCard 
                     performances={studentPerformances}
-                    assignments={subjects.flatMap(s => s.assignments || [])}
+                    assignments={[]} 
                   />
                 </TabsContent>
               </Tabs>
