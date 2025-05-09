@@ -6,6 +6,8 @@ import { useToast } from '@/hooks/use-toast';
 export const useProctoring = (assignmentId: string) => {
   const [hasWarning, setHasWarning] = useState(false);
   const [movementCount, setMovementCount] = useState(0);
+  const [deviceDetected, setDeviceDetected] = useState(false);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const { user, addWarning } = useAppContext();
@@ -27,7 +29,13 @@ export const useProctoring = (assignmentId: string) => {
   useEffect(() => {
     const startVideo = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { 
+            facingMode: 'user',
+            width: { ideal: 640 },
+            height: { ideal: 480 }
+          } 
+        });
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
@@ -40,21 +48,32 @@ export const useProctoring = (assignmentId: string) => {
     
     startVideo();
     
-    // Simulate movement detection
+    // Advanced movement detection (simulated)
     const movementInterval = setInterval(() => {
+      // Simulate face detection and tracking
       const shouldDetectMovement = Math.random() > 0.8;
       if (shouldDetectMovement) {
         const movement = Math.floor(Math.random() * 10);
-        setMovementCount(prev => prev + movement);
-        if (movement > 5) {
-          createWarning("Excessive movement detected");
-        }
+        setMovementCount(prev => {
+          const newValue = prev + movement;
+          if (newValue > 50 && movement > 5) {
+            createWarning("Excessive movement detected");
+            
+            // Simulate detecting another person or device
+            if (Math.random() > 0.7) {
+              setDeviceDetected(true);
+              createWarning("Multiple faces or another device detected");
+            }
+          }
+          return newValue;
+        });
       }
-    }, 5000);
+    }, 3000);
 
     // Monitor tab switching
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
+        setTabSwitchCount(prev => prev + 1);
         createWarning("Tab switching detected");
       }
     };
@@ -75,12 +94,22 @@ export const useProctoring = (assignmentId: string) => {
     
     document.addEventListener('copy', handleCopy);
     document.addEventListener('paste', handlePaste);
+    
+    // Detect right-click (context menu)
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      createWarning("Right-click detected");
+      return false;
+    };
+    
+    document.addEventListener('contextmenu', handleContextMenu);
 
     return () => {
       clearInterval(movementInterval);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.removeEventListener('copy', handleCopy);
       document.removeEventListener('paste', handlePaste);
+      document.removeEventListener('contextmenu', handleContextMenu);
       
       // Stop the camera stream
       if (streamRef.current) {
@@ -94,6 +123,8 @@ export const useProctoring = (assignmentId: string) => {
     streamRef,
     hasWarning,
     movementCount,
+    deviceDetected,
+    tabSwitchCount,
     createWarning
   };
 };

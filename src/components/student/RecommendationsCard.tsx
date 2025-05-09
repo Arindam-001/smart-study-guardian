@@ -7,9 +7,10 @@ import { BookOpen, Video, Link } from 'lucide-react';
 
 interface RecommendationsCardProps {
   resources: Resource[];
+  studentLevel?: 'beginner' | 'intermediate' | 'advanced';
 }
 
-const RecommendationsCard = ({ resources }: RecommendationsCardProps) => {
+const RecommendationsCard = ({ resources, studentLevel = 'beginner' }: RecommendationsCardProps) => {
   const getLevelColor = (level: string) => {
     switch (level) {
       case 'beginner': return 'bg-green-100 text-green-800';
@@ -28,18 +29,39 @@ const RecommendationsCard = ({ resources }: RecommendationsCardProps) => {
     }
   };
 
+  // Filter resources based on student level
+  const filteredResources = resources.filter(resource => {
+    if (studentLevel === 'beginner') {
+      // Beginner students get beginner resources
+      return resource.level === 'beginner';
+    } else if (studentLevel === 'intermediate') {
+      // Intermediate students get beginner and intermediate resources
+      return resource.level === 'beginner' || resource.level === 'intermediate';
+    } else {
+      // Advanced students get all resources
+      return true;
+    }
+  });
+
   return (
     <Card className="mb-4">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-medium">Recommended Resources</CardTitle>
+        <CardTitle className="text-lg font-medium flex items-center justify-between">
+          <span>Recommended Resources</span>
+          {studentLevel && (
+            <Badge className={getLevelColor(studentLevel)}>
+              {studentLevel.charAt(0).toUpperCase() + studentLevel.slice(1)}
+            </Badge>
+          )}
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        {resources.length === 0 ? (
+        {filteredResources.length === 0 ? (
           <p className="text-sm text-gray-500">No recommendations available yet. Complete an assignment to get personalized recommendations.</p>
         ) : (
           <ul className="space-y-3">
-            {resources.map(resource => (
-              <li key={resource.id} className="border rounded-md p-3">
+            {filteredResources.map(resource => (
+              <li key={resource.id} className="border rounded-md p-3 hover:shadow-md transition-shadow">
                 <div className="flex items-start gap-3">
                   <div className="mt-1">
                     {getIcon(resource.type)}
@@ -51,13 +73,18 @@ const RecommendationsCard = ({ resources }: RecommendationsCardProps) => {
                         {resource.level}
                       </Badge>
                     </div>
+                    {resource.topic && (
+                      <div className="mb-1">
+                        <span className="text-xs text-gray-500">Topic: {resource.topic}</span>
+                      </div>
+                    )}
                     <a 
                       href={resource.url} 
                       target="_blank" 
                       rel="noopener noreferrer"
-                      className="text-xs text-edu-primary hover:underline"
+                      className="text-xs text-edu-primary hover:underline inline-flex items-center"
                     >
-                      View Resource
+                      View Resource <span className="ml-1">→</span>
                     </a>
                   </div>
                 </div>
