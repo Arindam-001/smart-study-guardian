@@ -1,12 +1,16 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+
+import React from 'react';
+import LoginForm from '@/components/auth/LoginForm';
 
 const Index = () => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-gradient-to-b from-edu-light to-white flex flex-col justify-center items-center p-4">
+      <div className="text-center mb-8">
+        <h1 className="text-4xl md:text-5xl font-bold text-edu-primary mb-4">Student Portal</h1>
+        <p className="text-xl text-edu-dark max-w-md">Access your courses, assignments, and grades in one place</p>
       </div>
+      
+      <LoginForm />
     </div>
   );
 };
