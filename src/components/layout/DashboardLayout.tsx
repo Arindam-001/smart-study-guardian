@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAppContext } from '@/lib/context';
-import { User, Lock, BookOpen, AlertTriangle, Bell } from 'lucide-react';
+import { User, Book, BookOpen, AlertTriangle, Bell, Calendar, List, History } from 'lucide-react';
+import { NavigationMenu, NavigationMenuContent, NavigationMenuItem, NavigationMenuLink, NavigationMenuList, NavigationMenuTrigger, navigationMenuTriggerStyle } from '@/components/ui/navigation-menu';
+import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -21,6 +23,22 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
   
   const userRoleLabel = user?.role === 'admin' ? 'Administrator' : user?.role === 'teacher' ? 'Teacher' : 'Student';
 
+  // Determine dashboard link based on role
+  const getDashboardLink = () => {
+    if (!user) return '/';
+    
+    switch (user.role) {
+      case 'student':
+        return '/student-dashboard';
+      case 'teacher':
+        return '/faculty-dashboard';
+      case 'admin':
+        return '/admin-dashboard';
+      default:
+        return '/dashboard';
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -33,6 +51,99 @@ const DashboardLayout = ({ children, title }: DashboardLayoutProps) => {
           
           {user && (
             <div className="flex items-center space-x-4">
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="bg-transparent text-white hover:bg-edu-secondary hover:text-white">Navigation</NavigationMenuTrigger>
+                    <NavigationMenuContent>
+                      <ul className="grid w-[400px] gap-3 p-4">
+                        <li className="row-span-3">
+                          <NavigationMenuLink asChild>
+                            <Link
+                              to={getDashboardLink()}
+                              className="flex h-full w-full select-none flex-col justify-end rounded-md bg-gradient-to-b from-edu-primary to-edu-secondary p-6 no-underline outline-none focus:shadow-md"
+                            >
+                              <div className="mb-2 mt-4 text-lg font-medium text-white">
+                                {user.name}
+                              </div>
+                              <p className="text-sm leading-tight text-white/90">
+                                Logged in as {userRoleLabel}
+                              </p>
+                            </Link>
+                          </NavigationMenuLink>
+                        </li>
+                        
+                        <li>
+                          <Link to={getDashboardLink()} className={cn(
+                            navigationMenuTriggerStyle(),
+                            "w-full flex items-center gap-2"
+                          )}>
+                            <List className="h-4 w-4" />
+                            <span>Dashboard</span>
+                          </Link>
+                        </li>
+                        
+                        {user.role === 'student' && (
+                          <>
+                            <li>
+                              <Link to="/student-dashboard?tab=history" className={cn(
+                                navigationMenuTriggerStyle(),
+                                "w-full flex items-center gap-2"
+                              )}>
+                                <History className="h-4 w-4" />
+                                <span>Learning History</span>
+                              </Link>
+                            </li>
+                            <li>
+                              <Link to="/student-dashboard?tab=attendance" className={cn(
+                                navigationMenuTriggerStyle(),
+                                "w-full flex items-center gap-2"
+                              )}>
+                                <Calendar className="h-4 w-4" />
+                                <span>Attendance</span>
+                              </Link>
+                            </li>
+                          </>
+                        )}
+                        
+                        {user.role === 'teacher' && (
+                          <>
+                            <li>
+                              <Link to="/faculty-dashboard?tab=resources" className={cn(
+                                navigationMenuTriggerStyle(),
+                                "w-full flex items-center gap-2"
+                              )}>
+                                <Book className="h-4 w-4" />
+                                <span>Manage Resources</span>
+                              </Link>
+                            </li>
+                            <li>
+                              <Link to="/faculty-dashboard?tab=attendance" className={cn(
+                                navigationMenuTriggerStyle(),
+                                "w-full flex items-center gap-2"
+                              )}>
+                                <Calendar className="h-4 w-4" />
+                                <span>Manage Attendance</span>
+                              </Link>
+                            </li>
+                          </>
+                        )}
+                        
+                        <li>
+                          <Link to="/notifications" className={cn(
+                            navigationMenuTriggerStyle(),
+                            "w-full flex items-center gap-2"
+                          )}>
+                            <Bell className="h-4 w-4" />
+                            <span>Notifications</span>
+                          </Link>
+                        </li>
+                      </ul>
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+              
               <div className="relative">
                 <Button 
                   variant="ghost" 

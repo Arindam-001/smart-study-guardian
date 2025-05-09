@@ -8,6 +8,9 @@ import { useProctoring } from './hooks/useProctoring';
 import ProctoringMonitor from './proctoring/ProctoringMonitor';
 import QuestionDisplay from './questions/QuestionDisplay';
 import QuestionNavigation from './questions/QuestionNavigation';
+import { useAppContext } from '@/lib/context';
+import StudentPerformanceCard from '@/components/student/StudentPerformanceCard';
+import RecommendationsCard from '@/components/student/RecommendationsCard';
 
 interface TakeAssignmentProps {
   assignment: Assignment;
@@ -18,7 +21,10 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+  const [performance, setPerformance] = useState<any>(null);
   const { toast } = useToast();
+  const { user, submitAssignment } = useAppContext();
   
   const {
     videoRef,
@@ -49,21 +55,70 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
   };
 
   const handleSubmit = () => {
+    if (!user) return;
+    
     setIsSubmitting(true);
     setTimeout(() => {
-      toast({
-        title: "Assignment Submitted",
-        description: "Your answers have been submitted successfully."
-      });
-      
-      // Stop the camera stream
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+      try {
+        // Submit and get recommendations
+        const results = submitAssignment(assignment.id, user.id, answers);
+        setPerformance(results);
+        
+        toast({
+          title: "Assignment Submitted",
+          description: `Your score: ${results.score}/${assignment.questions.length}. Check your recommendations!`
+        });
+        
+        setSubmitted(true);
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to submit assignment",
+          variant: "destructive"
+        });
+      } finally {
+        setIsSubmitting(false);
+        
+        // Stop the camera stream
+        if (streamRef.current) {
+          streamRef.current.getTracks().forEach(track => track.stop());
+        }
       }
-      
-      onComplete();
     }, 1500);
   };
+
+  // When the user views their results and recommendations
+  const handleFinish = () => {
+    onComplete();
+  };
+
+  if (submitted && performance) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-edu-primary text-xl">
+              Assignment Results: {assignment.title}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <StudentPerformanceCard performance={performance} />
+            
+            <div className="my-6">
+              <h3 className="text-lg font-medium mb-4">Personalized Recommendations</h3>
+              <RecommendationsCard resources={performance.recommendedResources} />
+            </div>
+            
+            <div className="text-center">
+              <Button onClick={handleFinish} className="px-8">
+                Return to Dashboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col lg:flex-row gap-4">

@@ -7,6 +7,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AppProvider, useAppContext } from "@/lib/context";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
+import StudentDashboard from "./pages/StudentDashboard";
+import FacultyDashboard from "./pages/FacultyDashboard";
 import SemesterView from "./pages/SemesterView";
 import SubjectView from "./pages/SubjectView";
 import Notifications from "./pages/Notifications";
@@ -25,26 +27,88 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   return children;
 };
 
+// Role-protected route wrapper component
+const RoleProtectedRoute = ({ 
+  children, 
+  allowedRoles 
+}: { 
+  children: JSX.Element;
+  allowedRoles: string[];
+}) => {
+  const { isAuthenticated, user } = useAppContext();
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+  
+  if (!user || !allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return children;
+};
+
 const AppRoutes = () => {
+  const { user } = useAppContext();
+  
+  // Redirect based on user role
+  const getDashboardRedirect = () => {
+    if (!user) return <Navigate to="/" />;
+    
+    switch (user.role) {
+      case 'student':
+        return <Navigate to="/student-dashboard" />;
+      case 'teacher':
+        return <Navigate to="/faculty-dashboard" />;
+      case 'admin':
+        return <Navigate to="/admin-dashboard" />;
+      default:
+        return <Navigate to="/" />;
+    }
+  };
+
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      
       <Route 
         path="/dashboard" 
-        element={<ProtectedRoute><Dashboard /></ProtectedRoute>} 
+        element={<ProtectedRoute>{getDashboardRedirect()}</ProtectedRoute>} 
       />
+      
+      <Route 
+        path="/student-dashboard" 
+        element={
+          <RoleProtectedRoute allowedRoles={['student']}>
+            <StudentDashboard />
+          </RoleProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/faculty-dashboard" 
+        element={
+          <RoleProtectedRoute allowedRoles={['teacher']}>
+            <FacultyDashboard />
+          </RoleProtectedRoute>
+        } 
+      />
+      
       <Route 
         path="/semester/:semesterId" 
         element={<ProtectedRoute><SemesterView /></ProtectedRoute>} 
       />
+      
       <Route 
         path="/semester/:semesterId/subject/:subjectId" 
         element={<ProtectedRoute><SubjectView /></ProtectedRoute>} 
       />
+      
       <Route 
         path="/notifications" 
         element={<ProtectedRoute><Notifications /></ProtectedRoute>} 
       />
+      
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

@@ -1,8 +1,8 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Types
 export type UserRole = 'student' | 'teacher' | 'admin';
+export type ResourceLevel = 'beginner' | 'intermediate' | 'advanced';
 
 export interface User {
   id: string;
@@ -11,6 +11,8 @@ export interface User {
   role: UserRole;
   currentSemester: number;
   accessibleSemesters: number[];
+  // Add attendance tracking
+  attendance?: Record<string, boolean[]>;
 }
 
 export interface Subject {
@@ -19,6 +21,7 @@ export interface Subject {
   semesterId: number;
   teacherId: string;
   notes: Note[];
+  resources?: Resource[];
 }
 
 export interface Note {
@@ -29,6 +32,17 @@ export interface Note {
   updatedAt: Date;
 }
 
+export interface Resource {
+  id: string;
+  title: string;
+  type: 'video' | 'link' | 'document';
+  url: string;
+  level: ResourceLevel;
+  topic: string;
+  createdAt: Date;
+  subjectId: string;
+}
+
 export interface Assignment {
   id: string;
   subjectId: string;
@@ -36,6 +50,7 @@ export interface Assignment {
   questions: Question[];
   dueDate: Date;
   createdAt: Date;
+  studentScores?: Record<string, number>;
 }
 
 export interface Question {
@@ -44,6 +59,7 @@ export interface Question {
   options?: string[];
   correctAnswer?: string;
   type: 'multiple-choice' | 'text';
+  topic?: string; // Associate questions with specific topics
 }
 
 export interface Warning {
@@ -52,6 +68,19 @@ export interface Warning {
   assignmentId: string;
   reason: string;
   timestamp: Date;
+}
+
+export interface StudentPerformance {
+  studentId: string;
+  assignmentId: string;
+  score: number;
+  topics: {
+    [topic: string]: {
+      correct: number;
+      total: number;
+    }
+  };
+  recommendedResources: Resource[];
 }
 
 // Mock data
@@ -96,6 +125,38 @@ const MOCK_SUBJECTS: Subject[] = [
         createdAt: new Date(),
         updatedAt: new Date()
       }
+    ],
+    resources: [
+      {
+        id: 'r1',
+        title: 'Introduction to Python - Beginners',
+        type: 'video',
+        url: 'https://www.youtube.com/watch?v=example1',
+        level: 'beginner',
+        topic: 'programming basics',
+        createdAt: new Date(),
+        subjectId: '1'
+      },
+      {
+        id: 'r2',
+        title: 'Object-Oriented Programming Concepts - Intermediate',
+        type: 'video',
+        url: 'https://www.youtube.com/watch?v=example2',
+        level: 'intermediate',
+        topic: 'oop',
+        createdAt: new Date(),
+        subjectId: '1'
+      },
+      {
+        id: 'r3',
+        title: 'Advanced Data Structures - Expert Level',
+        type: 'document',
+        url: 'https://example.com/advanced-data-structures',
+        level: 'advanced',
+        topic: 'data structures',
+        createdAt: new Date(),
+        subjectId: '1'
+      }
     ]
   },
   {
@@ -103,21 +164,45 @@ const MOCK_SUBJECTS: Subject[] = [
     name: 'Calculus',
     semesterId: 1,
     teacherId: '2',
-    notes: []
+    notes: [],
+    resources: [
+      {
+        id: 'r4',
+        title: 'Introduction to Calculus',
+        type: 'video',
+        url: 'https://www.youtube.com/watch?v=example4',
+        level: 'beginner',
+        topic: 'limits',
+        createdAt: new Date(),
+        subjectId: '2'
+      },
+      {
+        id: 'r5',
+        title: 'Intermediate Calculus - Derivatives',
+        type: 'link',
+        url: 'https://example.com/derivatives',
+        level: 'intermediate',
+        topic: 'derivatives',
+        createdAt: new Date(),
+        subjectId: '2'
+      }
+    ]
   },
   {
     id: '3',
     name: 'Physics I',
     semesterId: 1,
     teacherId: '2',
-    notes: []
+    notes: [],
+    resources: []
   },
   {
     id: '4',
     name: 'Data Structures',
     semesterId: 2,
     teacherId: '2',
-    notes: []
+    notes: [],
+    resources: []
   }
 ];
 
@@ -130,11 +215,16 @@ interface AppContextType {
   subjects: Subject[];
   addSubject: (subject: Omit<Subject, 'id' | 'notes'>) => void;
   addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addResource: (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => void;
   createAssignment: (subjectId: string, title: string) => Assignment;
+  submitAssignment: (assignmentId: string, studentId: string, answers: Record<string, string>) => StudentPerformance;
   addWarning: (studentId: string, assignmentId: string, reason: string) => void;
   warnings: Warning[];
   grantSemesterAccess: (studentId: string, semesterId: number) => void;
   semesters: number[];
+  updateAttendance: (studentId: string, subjectId: string, date: string, present: boolean) => void;
+  getStudentPerformance: (studentId: string) => StudentPerformance[];
+  studentPerformance: StudentPerformance[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -144,6 +234,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [subjects, setSubjects] = useState<Subject[]>(MOCK_SUBJECTS);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [studentPerformance, setStudentPerformance] = useState<StudentPerformance[]>([]);
   const semesters = [1, 2, 3, 4, 5, 6, 7, 8]; // Most engineering courses have 8 semesters
 
   const login = async (email: string, password: string) => {
@@ -184,6 +275,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
               updatedAt: new Date()
             }
           ]
+        };
+      }
+      return subject;
+    }));
+  };
+
+  const addResource = (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => {
+    const newResource: Resource = {
+      ...resource,
+      id: `resource-${Date.now()}`,
+      createdAt: new Date(),
+    };
+
+    setSubjects(prev => prev.map(subject => {
+      if (subject.id === subjectId) {
+        return {
+          ...subject,
+          resources: [...(subject.resources || []), newResource]
         };
       }
       return subject;
@@ -237,6 +346,100 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return newAssignment;
   };
 
+  const submitAssignment = (assignmentId: string, studentId: string, answers: Record<string, string>) => {
+    const assignment = assignments.find(a => a.id === assignmentId);
+    if (!assignment) throw new Error("Assignment not found");
+    
+    let score = 0;
+    const topicPerformance: Record<string, { correct: number, total: number }> = {};
+    
+    // Calculate score and track performance by topic
+    assignment.questions.forEach(question => {
+      const studentAnswer = answers[question.id] || '';
+      const isCorrect = question.correctAnswer === studentAnswer;
+      const topic = question.topic || 'general';
+      
+      if (isCorrect) score++;
+      
+      if (!topicPerformance[topic]) {
+        topicPerformance[topic] = { correct: 0, total: 0 };
+      }
+      
+      topicPerformance[topic].total++;
+      if (isCorrect) topicPerformance[topic].correct++;
+    });
+    
+    // Update assignment scores
+    setAssignments(prev => prev.map(a => {
+      if (a.id === assignmentId) {
+        return {
+          ...a,
+          studentScores: {
+            ...(a.studentScores || {}),
+            [studentId]: score
+          }
+        };
+      }
+      return a;
+    }));
+    
+    // Generate recommendations based on score
+    const totalQuestions = assignment.questions.length;
+    const percentageScore = (score / totalQuestions) * 100;
+    
+    // Determine overall student level
+    let recommendedLevel: ResourceLevel = 'beginner';
+    if (percentageScore >= 75) {
+      recommendedLevel = 'advanced';
+    } else if (percentageScore >= 50) {
+      recommendedLevel = 'intermediate';
+    }
+    
+    // Find weak topics (below 50% correct)
+    const weakTopics = Object.entries(topicPerformance)
+      .filter(([_, data]) => (data.correct / data.total) < 0.5)
+      .map(([topic, _]) => topic);
+    
+    // Find resources for recommendation
+    const relatedSubject = subjects.find(s => s.id === assignment.subjectId);
+    const recommendedResources = (relatedSubject?.resources || [])
+      .filter(resource => {
+        // For low scores, recommend beginner resources regardless of topic
+        if (percentageScore < 40) return resource.level === 'beginner';
+        
+        // For weak topics, recommend resources at appropriate level
+        if (weakTopics.includes(resource.topic)) return resource.level === recommendedLevel;
+        
+        // Otherwise include general resources at the student's level
+        return resource.level === recommendedLevel && resource.topic === 'general';
+      });
+    
+    // Create and save performance data
+    const performance: StudentPerformance = {
+      studentId,
+      assignmentId,
+      score,
+      topics: topicPerformance,
+      recommendedResources
+    };
+    
+    setStudentPerformance(prev => {
+      const existingIndex = prev.findIndex(p => 
+        p.studentId === studentId && p.assignmentId === assignmentId
+      );
+      
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex] = performance;
+        return updated;
+      } else {
+        return [...prev, performance];
+      }
+    });
+    
+    return performance;
+  };
+
   const addWarning = (studentId: string, assignmentId: string, reason: string) => {
     const newWarning: Warning = {
       id: `w-${Date.now()}`,
@@ -262,6 +465,36 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }
   };
 
+  const updateAttendance = (studentId: string, subjectId: string, date: string, present: boolean) => {
+    setUser(prev => {
+      if (prev && prev.id === studentId) {
+        const attendance = prev.attendance || {};
+        const subjectAttendance = attendance[subjectId] || [];
+        const dateIndex = parseInt(date.split('-')[2]) - 1; // Convert date to index
+        
+        // Ensure array is long enough
+        while (subjectAttendance.length <= dateIndex) {
+          subjectAttendance.push(false);
+        }
+        
+        subjectAttendance[dateIndex] = present;
+        
+        return {
+          ...prev,
+          attendance: {
+            ...attendance,
+            [subjectId]: subjectAttendance
+          }
+        };
+      }
+      return prev;
+    });
+  };
+  
+  const getStudentPerformance = (studentId: string) => {
+    return studentPerformance.filter(p => p.studentId === studentId);
+  };
+
   const value = {
     user,
     isAuthenticated: !!user,
@@ -270,11 +503,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     subjects,
     addSubject,
     addNote,
+    addResource,
     createAssignment,
+    submitAssignment,
     addWarning,
     warnings,
     grantSemesterAccess,
-    semesters
+    semesters,
+    updateAttendance,
+    getStudentPerformance,
+    studentPerformance
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
