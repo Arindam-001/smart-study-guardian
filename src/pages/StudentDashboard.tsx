@@ -11,6 +11,7 @@ import AttendanceCard from '@/components/student/AttendanceCard';
 import HistoryCard from '@/components/student/HistoryCard';
 import { BookOpen, Calendar, History, List, Star } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ResourceLevel } from '@/lib/context';
 
 const StudentDashboard = () => {
   const { user, subjects, getStudentPerformance } = useAppContext();
@@ -64,7 +65,7 @@ const StudentDashboard = () => {
     : 0;
 
   // Determine student level
-  let studentLevel = 'beginner';
+  let studentLevel: ResourceLevel = 'beginner';
   if (overallPercentage >= 75) {
     studentLevel = 'advanced';
   } else if (overallPercentage >= 50) {
