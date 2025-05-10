@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Note } from '@/lib/context';
+import { Note } from '@/lib/interfaces/types';
 import { format } from 'date-fns';
 
 interface NoteItemProps {

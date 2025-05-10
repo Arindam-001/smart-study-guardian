@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Assignment, StudentPerformance } from '@/lib/context';
+import { Assignment, StudentPerformance } from '@/lib/interfaces/types';
 import { History } from 'lucide-react';
 
 interface HistoryCardProps {
@@ -16,7 +16,8 @@ const HistoryCard = ({ performances, assignments }: HistoryCardProps) => {
       ...performance,
       assignmentTitle: assignment?.title || 'Unknown Assignment',
       completedAt: new Date(),
-      totalQuestions: Object.values(performance.topics).reduce((sum, t) => sum + t.total, 0)
+      totalQuestions: Object.values(performance.topics)
+        .reduce((sum, topic) => sum + topic.total, 0)
     };
   });
   

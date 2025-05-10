@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User } from '@/lib/context';
+import { User } from '@/lib/interfaces/types';
 import { useAppContext } from '@/lib/context';
 import { Calendar } from 'lucide-react';
 

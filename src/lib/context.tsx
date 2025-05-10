@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { AssignmentSubmission } from './interfaces/assignment';
 import { 
@@ -502,3 +503,6 @@ export const useAppContext = () => {
   }
   return context;
 };
+
+// Re-export the types from interfaces for components to use
+export type { Question, Note, User, Assignment, StudentPerformance, Resource };

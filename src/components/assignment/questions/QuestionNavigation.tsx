@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Question } from '@/lib/context';
+import { Question } from '@/lib/interfaces/types';
 import { Check, X, HelpCircle } from 'lucide-react';
 
 interface QuestionNavigationProps {

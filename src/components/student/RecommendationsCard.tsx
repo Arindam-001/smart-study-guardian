@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Resource } from '@/lib/context';
+import { Resource } from '@/lib/interfaces/types';
 import { BookOpen, Video, Link } from 'lucide-react';
 
 interface RecommendationsCardProps {

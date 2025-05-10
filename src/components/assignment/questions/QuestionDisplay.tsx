@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Textarea } from '@/components/ui/textarea';
-import { Question } from '@/lib/context';
+import { Question } from '@/lib/interfaces/types';
 
 interface QuestionDisplayProps {
   question: Question;

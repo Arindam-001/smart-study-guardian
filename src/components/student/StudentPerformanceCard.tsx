@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { StudentPerformance } from '@/lib/context';
+import { StudentPerformance } from '@/lib/interfaces/types';
 
 interface StudentPerformanceCardProps {
   performance: StudentPerformance;
