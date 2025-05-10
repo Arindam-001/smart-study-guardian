@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { AssignmentSubmission } from './interfaces/assignment';
 import { 
@@ -131,32 +130,6 @@ const MOCK_SUBJECTS: Subject[] = [
 ];
 
 // Context
-interface AppContextType {
-  user: User | null;
-  users: User[]; // Added users property to the interface
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
-  registerUser: (name: string, email: string, password: string, id: string, role: UserRole, currentSemester?: number) => Promise<boolean>;
-  subjects: Subject[];
-  addSubject: (subject: Omit<Subject, 'id' | 'notes'>) => void;
-  addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  addResource: (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => void;
-  createAssignment: (subjectId: string, title: string) => Assignment;
-  submitAssignment: (assignmentId: string, studentId: string, answers: Record<string, string>, fileUrl?: string) => StudentPerformance;
-  addWarning: (studentId: string, assignmentId: string, reason: string) => void;
-  warnings: Warning[];
-  grantSemesterAccess: (studentId: string, semesterId: number) => void;
-  semesters: number[];
-  updateAttendance: (studentId: string, subjectId: string, date: string, present: boolean) => void;
-  getStudentPerformance: (studentId: string) => StudentPerformance[];
-  studentPerformance: StudentPerformance[];
-  assignments: Assignment[];
-  submissions: AssignmentSubmission[];
-  getSubmissionsByAssignment: (assignmentId: string) => AssignmentSubmission[];
-  getSubmissionsByStudent: (studentId: string) => AssignmentSubmission[];
-}
-
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -469,7 +442,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const value = {
     user,
-    users, // Added users to the context value
+    users, 
     isAuthenticated: !!user,
     login,
     logout,
