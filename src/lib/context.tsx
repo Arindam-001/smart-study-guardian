@@ -212,6 +212,7 @@ interface AppContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
+  registerUser: (name: string, email: string, password: string, id: string, role: UserRole, currentSemester?: number) => Promise<boolean>;
   subjects: Subject[];
   addSubject: (subject: Omit<Subject, 'id' | 'notes'>) => void;
   addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
@@ -231,6 +232,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [users, setUsers] = useState<User[]>(MOCK_USERS);
   const [subjects, setSubjects] = useState<Subject[]>(MOCK_SUBJECTS);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
@@ -239,7 +241,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const login = async (email: string, password: string) => {
     // In a real app, you would call an API here
-    const foundUser = MOCK_USERS.find(u => u.email === email);
+    const foundUser = users.find(u => u.email === email);
     
     if (foundUser) {
       setUser(foundUser);
@@ -250,6 +252,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const logout = () => {
     setUser(null);
+  };
+
+  const registerUser = async (name: string, email: string, password: string, id: string, role: UserRole, currentSemester: number = 1) => {
+    // Check if email or ID already exists
+    if (users.some(u => u.email === email || u.id === id)) {
+      return false;
+    }
+    
+    const newUser: User = {
+      id,
+      name,
+      email,
+      role,
+      currentSemester: role === 'student' ? currentSemester : 0,
+      accessibleSemesters: role === 'student' ? [currentSemester] : [1, 2, 3, 4, 5, 6, 7, 8],
+    };
+    
+    setUsers(prev => [...prev, newUser]);
+    return true;
   };
 
   const addSubject = (subject: Omit<Subject, 'id' | 'notes'>) => {
@@ -500,6 +521,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     isAuthenticated: !!user,
     login,
     logout,
+    registerUser,
     subjects,
     addSubject,
     addNote,

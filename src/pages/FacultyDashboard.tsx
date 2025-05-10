@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X } from 'lucide-react';
+import { Check, X, FileUp, Upload, Trash } from 'lucide-react';
 
 const FacultyDashboard = () => {
   const { user, subjects, addResource, updateAttendance } = useAppContext();
@@ -21,6 +20,8 @@ const FacultyDashboard = () => {
   const [resourceLevel, setResourceLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('beginner');
   const [resourceTopic, setResourceTopic] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
   // Get subjects taught by this faculty member
@@ -93,6 +94,44 @@ const FacultyDashboard = () => {
     });
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setSelectedFiles(prev => [...prev, ...newFiles]);
+      
+      // Create placeholder URLs for file previews
+      if (newFiles.length > 0) {
+        const file = newFiles[0];
+        if (file.type.startsWith('image/')) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            setResourceUrl(e.target?.result as string);
+            setResourceType('document');
+          };
+          reader.readAsDataURL(file);
+        } else {
+          setResourceUrl(URL.createObjectURL(file));
+          setResourceType(file.type.includes('video') ? 'video' : 'document');
+        }
+        // Set title from filename if empty
+        if (resourceTitle === '') {
+          setResourceTitle(file.name.split('.')[0]);
+        }
+      }
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const removeSelectedFile = (index: number) => {
+    setSelectedFiles(files => files.filter((_, i) => i !== index));
+    if (selectedFiles.length <= 1) {
+      setResourceUrl('');
+    }
+  };
+
   // Mock students for attendance
   const students = [
     { id: '1', name: 'Student User', email: 'student@example.com' },
@@ -155,16 +194,56 @@ const FacultyDashboard = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="resource-url">Resource URL</Label>
-                      <Input
-                        id="resource-url"
-                        value={resourceUrl}
-                        onChange={(e) => setResourceUrl(e.target.value)}
-                        placeholder="https://example.com/resource"
-                        required
-                      />
+                      <Label htmlFor="resource-url">Resource URL or Upload</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          id="resource-url"
+                          value={resourceUrl}
+                          onChange={(e) => setResourceUrl(e.target.value)}
+                          placeholder="https://example.com/resource"
+                          className="flex-1"
+                          required={selectedFiles.length === 0}
+                        />
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={handleUploadClick}
+                          className="flex-shrink-0"
+                        >
+                          <Upload className="h-4 w-4 mr-2" />
+                          Upload
+                        </Button>
+                        <input
+                          type="file"
+                          ref={fileInputRef}
+                          onChange={handleFileChange}
+                          className="hidden"
+                          multiple
+                        />
+                      </div>
                     </div>
                   </div>
+
+                  {selectedFiles.length > 0 && (
+                    <div className="border rounded-md p-3 space-y-2">
+                      <h4 className="text-sm font-medium">Selected Files:</h4>
+                      <ul className="space-y-2">
+                        {selectedFiles.map((file, index) => (
+                          <li key={index} className="flex items-center justify-between text-sm">
+                            <span className="truncate">{file.name}</span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => removeSelectedFile(index)}
+                              className="h-6 w-6 p-0 text-red-500"
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
@@ -213,7 +292,10 @@ const FacultyDashboard = () => {
                     </div>
                   </div>
 
-                  <Button type="submit" className="mt-4">Add Resource</Button>
+                  <Button type="submit" className="mt-4">
+                    <FileUp className="h-4 w-4 mr-2" />
+                    Add Resource
+                  </Button>
                 </form>
 
                 <div className="mt-6">

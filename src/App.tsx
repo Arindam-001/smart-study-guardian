@@ -9,10 +9,12 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import StudentDashboard from "./pages/StudentDashboard";
 import FacultyDashboard from "./pages/FacultyDashboard";
+import AdminDashboard from "./pages/AdminDashboard";
 import SemesterView from "./pages/SemesterView";
 import SubjectView from "./pages/SubjectView";
 import Notifications from "./pages/Notifications";
 import NotFound from "./pages/NotFound";
+import Register from "./pages/Register";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +72,7 @@ const AppRoutes = () => {
   return (
     <Routes>
       <Route path="/" element={<Index />} />
+      <Route path="/register" element={<Register />} />
       
       <Route 
         path="/dashboard" 
@@ -90,6 +93,15 @@ const AppRoutes = () => {
         element={
           <RoleProtectedRoute allowedRoles={['teacher']}>
             <FacultyDashboard />
+          </RoleProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/admin-dashboard" 
+        element={
+          <RoleProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
           </RoleProtectedRoute>
         } 
       />
