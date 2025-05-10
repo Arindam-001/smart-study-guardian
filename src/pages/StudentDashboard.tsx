@@ -9,9 +9,11 @@ import StudentPerformanceCard from '@/components/student/StudentPerformanceCard'
 import RecommendationsCard from '@/components/student/RecommendationsCard';
 import AttendanceCard from '@/components/student/AttendanceCard';
 import HistoryCard from '@/components/student/HistoryCard';
-import { BookOpen, Calendar, History, List, Star } from 'lucide-react';
+import { BookOpen, Calendar, History, List, Star, FileText } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ResourceLevel } from '@/lib/context';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const StudentDashboard = () => {
   const { user, subjects, getStudentPerformance } = useAppContext();
@@ -72,6 +74,11 @@ const StudentDashboard = () => {
     studentLevel = 'intermediate';
   }
 
+  // Filter subjects for the current semester
+  const currentSemesterSubjects = subjects.filter(
+    subject => subject.semesterId === user.currentSemester
+  );
+
   return (
     <DashboardLayout title="Student Dashboard">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -104,10 +111,14 @@ const StudentDashboard = () => {
             </CardHeader>
             <CardContent>
               <Tabs defaultValue="overview">
-                <TabsList className="grid grid-cols-4 mb-4">
+                <TabsList className="grid grid-cols-5 mb-4">
                   <TabsTrigger value="overview" className="flex items-center gap-2">
                     <List className="h-4 w-4" />
                     <span>Overview</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="assignments" className="flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    <span>Assignments</span>
                   </TabsTrigger>
                   <TabsTrigger value="performance" className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4" />
@@ -164,6 +175,45 @@ const StudentDashboard = () => {
                     ) : (
                       <div className="text-center py-8">
                         <p>Complete assignments to see your performance data.</p>
+                      </div>
+                    )}
+                  </div>
+                </TabsContent>
+                
+                {/* New Assignments tab */}
+                <TabsContent value="assignments">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-medium mb-2">Your Assignments</h3>
+                    
+                    {currentSemesterSubjects.length > 0 ? (
+                      <div className="space-y-4">
+                        {currentSemesterSubjects.map(subject => (
+                          <Card key={subject.id} className="overflow-hidden">
+                            <CardHeader className="bg-muted/50">
+                              <CardTitle className="text-lg">{subject.name}</CardTitle>
+                              <CardDescription>Semester {user.currentSemester}</CardDescription>
+                            </CardHeader>
+                            <CardContent className="pt-4">
+                              <div className="space-y-4">
+                                {/* Display assignment list or empty state */}
+                                <div className="text-center py-4">
+                                  <p className="text-muted-foreground mb-4">
+                                    No pending assignments for this subject.
+                                  </p>
+                                  <Link to={`/semester/${subject.semesterId}/subject/${subject.id}`}>
+                                    <Button variant="outline">View Subject Details</Button>
+                                  </Link>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 bg-muted rounded-lg">
+                        <p className="text-muted-foreground">
+                          No subjects available for your current semester.
+                        </p>
                       </div>
                     )}
                   </div>

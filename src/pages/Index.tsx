@@ -1,12 +1,10 @@
 
 import React, { useState } from 'react';
 import LoginForm from '@/components/auth/LoginForm';
-import RegisterForm from '@/components/auth/RegisterForm';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const Index = () => {
-  const [showRegister, setShowRegister] = useState(false);
-  
   return (
     <div className="min-h-screen bg-gradient-to-b from-edu-light to-white flex flex-col justify-center items-center p-4">
       <div className="text-center mb-8">
@@ -14,22 +12,16 @@ const Index = () => {
         <p className="text-xl text-edu-dark max-w-md">Access your courses, assignments, and grades in one place</p>
       </div>
       
-      {showRegister ? (
-        <RegisterForm />
-      ) : (
-        <>
-          <LoginForm />
-          <div className="mt-4 text-center">
-            <p className="text-muted-foreground mb-2">New to the platform?</p>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowRegister(true)}
-            >
-              Register New Account
-            </Button>
-          </div>
-        </>
-      )}
+      <LoginForm />
+      
+      <div className="mt-6 text-center">
+        <p className="text-muted-foreground mb-2">New to the platform?</p>
+        <Link to="/register">
+          <Button variant="outline">
+            Register New Account
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 };

@@ -1,6 +1,8 @@
 
 import React from 'react';
 import RegisterForm from '@/components/auth/RegisterForm';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const Register = () => {
   return (
@@ -11,6 +13,15 @@ const Register = () => {
       </div>
       
       <RegisterForm />
+      
+      <div className="mt-6 text-center">
+        <p className="text-muted-foreground mb-2">Already have an account?</p>
+        <Link to="/">
+          <Button variant="outline">
+            Back to Login
+          </Button>
+        </Link>
+      </div>
     </div>
   );
 };
