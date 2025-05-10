@@ -3,22 +3,20 @@ import React, { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
-import StudentPerformanceCard from '@/components/student/StudentPerformanceCard';
+import { Card, CardContent } from '@/components/ui/card';
+import { BookOpen, Calendar, History, List, FileText } from 'lucide-react';
+import { ResourceLevel } from '@/lib/interfaces/types';
 import RecommendationsCard from '@/components/student/RecommendationsCard';
-import AttendanceCard from '@/components/student/AttendanceCard';
 import HistoryCard from '@/components/student/HistoryCard';
-import { BookOpen, Calendar, History, List, Star, FileText } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ResourceLevel } from '@/lib/context';
-import { Link } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import StudentDashboardHeader from '@/components/dashboard/StudentDashboardHeader';
+import OverviewTab from '@/components/dashboard/OverviewTab';
+import AssignmentsTab from '@/components/dashboard/AssignmentsTab';
+import PerformanceTab from '@/components/dashboard/PerformanceTab';
+import AttendanceTab from '@/components/dashboard/AttendanceTab';
 
 const StudentDashboard = () => {
   const { user, subjects, getStudentPerformance } = useAppContext();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const { toast } = useToast();
   
   useEffect(() => {
     if (subjects.length > 0 && !selectedSubject) {
@@ -83,33 +81,17 @@ const StudentDashboard = () => {
     <DashboardLayout title="Student Dashboard">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2">
+          <StudentDashboardHeader 
+            user={user}
+            totalAssignments={totalAssignments}
+            totalQuestions={totalQuestions}
+            totalCorrect={totalCorrect}
+            overallPercentage={overallPercentage}
+            studentLevel={studentLevel}
+          />
+          
           <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <div>Welcome, {user.name}</div>
-                <div className="ml-auto">
-                  {studentLevel === 'beginner' && (
-                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded">Beginner</span>
-                  )}
-                  {studentLevel === 'intermediate' && (
-                    <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded">Intermediate</span>
-                  )}
-                  {studentLevel === 'advanced' && (
-                    <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded">Advanced</span>
-                  )}
-                </div>
-              </CardTitle>
-              <CardDescription className="flex items-center justify-between">
-                <span>You are currently enrolled in Semester {user.currentSemester}</span>
-                {totalAssignments > 0 && (
-                  <span className="flex items-center">
-                    <Star className="h-4 w-4 text-yellow-500 mr-1" />
-                    Overall: {totalCorrect}/{totalQuestions} ({overallPercentage}%)
-                  </span>
-                )}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               <Tabs defaultValue="overview">
                 <TabsList className="grid grid-cols-5 mb-4">
                   <TabsTrigger value="overview" className="flex items-center gap-2">
@@ -135,117 +117,33 @@ const StudentDashboard = () => {
                 </TabsList>
                 
                 <TabsContent value="overview">
-                  <div className="grid grid-cols-1 gap-4">
-                    {studentPerformances.length > 0 ? (
-                      <>
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-medium">Recent Performance</h3>
-                            <Select
-                              value={selectedSubject || ''}
-                              onValueChange={(value) => setSelectedSubject(value)}
-                            >
-                              <SelectTrigger className="w-[180px]">
-                                <SelectValue placeholder="Select Subject" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {subjects.map((subject) => (
-                                  <SelectItem key={subject.id} value={subject.id}>
-                                    {subject.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <StudentPerformanceCard 
-                            performance={studentPerformances[studentPerformances.length - 1]} 
-                          />
-                        </div>
-                        
-                        <div>
-                          <h3 className="text-lg font-medium mb-2">Subject Attendance</h3>
-                          {selectedSubject && (
-                            <AttendanceCard 
-                              studentId={user.id} 
-                              subjectId={selectedSubject} 
-                            />
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <div className="text-center py-8">
-                        <p>Complete assignments to see your performance data.</p>
-                      </div>
-                    )}
-                  </div>
+                  <OverviewTab 
+                    studentId={user.id}
+                    subjects={subjects}
+                    selectedSubject={selectedSubject}
+                    setSelectedSubject={setSelectedSubject}
+                    studentPerformances={studentPerformances}
+                  />
                 </TabsContent>
                 
-                {/* New Assignments tab */}
                 <TabsContent value="assignments">
-                  <div className="space-y-4">
-                    <h3 className="text-lg font-medium mb-2">Your Assignments</h3>
-                    
-                    {currentSemesterSubjects.length > 0 ? (
-                      <div className="space-y-4">
-                        {currentSemesterSubjects.map(subject => (
-                          <Card key={subject.id} className="overflow-hidden">
-                            <CardHeader className="bg-muted/50">
-                              <CardTitle className="text-lg">{subject.name}</CardTitle>
-                              <CardDescription>Semester {user.currentSemester}</CardDescription>
-                            </CardHeader>
-                            <CardContent className="pt-4">
-                              <div className="space-y-4">
-                                {/* Display assignment list or empty state */}
-                                <div className="text-center py-4">
-                                  <p className="text-muted-foreground mb-4">
-                                    No pending assignments for this subject.
-                                  </p>
-                                  <Link to={`/semester/${subject.semesterId}/subject/${subject.id}`}>
-                                    <Button variant="outline">View Subject Details</Button>
-                                  </Link>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8 bg-muted rounded-lg">
-                        <p className="text-muted-foreground">
-                          No subjects available for your current semester.
-                        </p>
-                      </div>
-                    )}
-                  </div>
+                  <AssignmentsTab 
+                    currentSemesterSubjects={currentSemesterSubjects}
+                    currentSemester={user.currentSemester}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="performance">
-                  <div className="space-y-4">
-                    {studentPerformances.length > 0 ? (
-                      studentPerformances.map(performance => (
-                        <StudentPerformanceCard 
-                          key={performance.assignmentId}
-                          performance={performance} 
-                        />
-                      ))
-                    ) : (
-                      <div className="text-center py-8">
-                        <p>No performance data available. Complete assignments to see your results.</p>
-                      </div>
-                    )}
-                  </div>
+                  <PerformanceTab 
+                    studentPerformances={studentPerformances} 
+                  />
                 </TabsContent>
                 
                 <TabsContent value="attendance">
-                  <div className="space-y-4">
-                    {subjects.map(subject => (
-                      <AttendanceCard 
-                        key={subject.id}
-                        studentId={user.id}
-                        subjectId={subject.id}
-                      />
-                    ))}
-                  </div>
+                  <AttendanceTab 
+                    studentId={user.id}
+                    subjects={subjects}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="history">

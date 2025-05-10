@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Assignment } from '@/lib/context';
+import { Assignment } from '@/lib/interfaces/types';
 import { useToast } from '@/hooks/use-toast';
 import { useProctoring } from './hooks/useProctoring';
 import ProctoringMonitor from './proctoring/ProctoringMonitor';
@@ -11,6 +11,8 @@ import QuestionNavigation from './questions/QuestionNavigation';
 import { useAppContext } from '@/lib/context';
 import StudentPerformanceCard from '@/components/student/StudentPerformanceCard';
 import RecommendationsCard from '@/components/student/RecommendationsCard';
+import { Input } from '@/components/ui/input';
+import { AlertTriangle } from 'lucide-react';
 
 interface TakeAssignmentProps {
   assignment: Assignment;
@@ -23,6 +25,8 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [performance, setPerformance] = useState<any>(null);
+  const [file, setFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user, submitAssignment } = useAppContext();
   
@@ -42,6 +46,12 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
     }));
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setFile(e.target.files[0]);
+    }
+  };
+
   const handleNextQuestion = () => {
     if (currentQuestionIndex < assignment.questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
@@ -57,11 +67,26 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
   const handleSubmit = () => {
     if (!user) return;
     
+    // Validate if a file is uploaded
+    if (!file) {
+      toast({
+        title: "File Required",
+        description: "Please upload your assignment document before submitting",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
+    
+    // In a real app, we would upload the file to storage and get a URL
+    // For now, we'll just simulate a file URL
+    const mockFileUrl = `assignment_${assignment.id}_${user.id}_${file.name}`;
+    
     setTimeout(() => {
       try {
         // Submit and get recommendations
-        const results = submitAssignment(assignment.id, user.id, answers);
+        const results = submitAssignment(assignment.id, user.id, answers, mockFileUrl);
         setPerformance(results);
         
         toast({
@@ -135,6 +160,31 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
               answer={answers[currentQuestion.id] || ''}
               onAnswerChange={handleAnswerChange}
             />
+            
+            {currentQuestionIndex === assignment.questions.length - 1 && (
+              <div className="mt-6 border-t pt-4">
+                <h4 className="font-medium mb-2">Upload Assignment Document</h4>
+                <div className="flex flex-col space-y-2">
+                  <Input 
+                    type="file" 
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    accept=".pdf,.doc,.docx" 
+                  />
+                  {!file && (
+                    <p className="text-xs text-muted-foreground flex items-center">
+                      <AlertTriangle className="h-3 w-3 mr-1 text-amber-500" />
+                      Upload is required before submission
+                    </p>
+                  )}
+                  {file && (
+                    <p className="text-xs text-green-600">
+                      File selected: {file.name}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex justify-between">
             <Button 

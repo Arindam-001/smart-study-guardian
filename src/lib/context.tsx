@@ -1,88 +1,10 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-// Types
-export type UserRole = 'student' | 'teacher' | 'admin';
-export type ResourceLevel = 'beginner' | 'intermediate' | 'advanced';
-
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-  currentSemester: number;
-  accessibleSemesters: number[];
-  // Add attendance tracking
-  attendance?: Record<string, boolean[]>;
-}
-
-export interface Subject {
-  id: string;
-  name: string;
-  semesterId: number;
-  teacherId: string;
-  notes: Note[];
-  resources?: Resource[];
-}
-
-export interface Note {
-  id: string;
-  title: string;
-  content: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Resource {
-  id: string;
-  title: string;
-  type: 'video' | 'link' | 'document';
-  url: string;
-  level: ResourceLevel;
-  topic: string;
-  createdAt: Date;
-  subjectId: string;
-}
-
-export interface Assignment {
-  id: string;
-  subjectId: string;
-  title: string;
-  questions: Question[];
-  dueDate: Date;
-  createdAt: Date;
-  studentScores?: Record<string, number>;
-}
-
-export interface Question {
-  id: string;
-  text: string;
-  options?: string[];
-  correctAnswer?: string;
-  type: 'multiple-choice' | 'text';
-  topic?: string; // Associate questions with specific topics
-}
-
-export interface Warning {
-  id: string;
-  studentId: string;
-  assignmentId: string;
-  reason: string;
-  timestamp: Date;
-}
-
-export interface StudentPerformance {
-  studentId: string;
-  assignmentId: string;
-  score: number;
-  topics: {
-    [topic: string]: {
-      correct: number;
-      total: number;
-    }
-  };
-  recommendedResources: Resource[];
-}
+import { AssignmentSubmission } from './interfaces/assignment';
+import { 
+  User, UserRole, ResourceLevel, Subject, Note, Resource, 
+  Assignment, Question, Warning, StudentPerformance 
+} from './interfaces/types';
+import { AppContextType } from './interfaces/context';
 
 // Mock data
 const MOCK_USERS: User[] = [
@@ -99,7 +21,7 @@ const MOCK_USERS: User[] = [
     name: 'Teacher User',
     email: 'teacher@example.com',
     role: 'teacher',
-    currentSemester: 0, // Not applicable
+    currentSemester: 0,
     accessibleSemesters: [1, 2, 3, 4, 5, 6, 7, 8]
   },
   {
@@ -107,7 +29,7 @@ const MOCK_USERS: User[] = [
     name: 'Admin User',
     email: 'admin@example.com',
     role: 'admin',
-    currentSemester: 0, // Not applicable
+    currentSemester: 0,
     accessibleSemesters: [1, 2, 3, 4, 5, 6, 7, 8]
   }
 ];
@@ -220,7 +142,7 @@ interface AppContextType {
   addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
   addResource: (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => void;
   createAssignment: (subjectId: string, title: string) => Assignment;
-  submitAssignment: (assignmentId: string, studentId: string, answers: Record<string, string>) => StudentPerformance;
+  submitAssignment: (assignmentId: string, studentId: string, answers: Record<string, string>, fileUrl?: string) => StudentPerformance;
   addWarning: (studentId: string, assignmentId: string, reason: string) => void;
   warnings: Warning[];
   grantSemesterAccess: (studentId: string, semesterId: number) => void;
@@ -228,6 +150,10 @@ interface AppContextType {
   updateAttendance: (studentId: string, subjectId: string, date: string, present: boolean) => void;
   getStudentPerformance: (studentId: string) => StudentPerformance[];
   studentPerformance: StudentPerformance[];
+  assignments: Assignment[];
+  submissions: AssignmentSubmission[];
+  getSubmissionsByAssignment: (assignmentId: string) => AssignmentSubmission[];
+  getSubmissionsByStudent: (studentId: string) => AssignmentSubmission[];
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -239,6 +165,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [studentPerformance, setStudentPerformance] = useState<StudentPerformance[]>([]);
+  const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
   const semesters = [1, 2, 3, 4, 5, 6, 7, 8]; // Most engineering courses have 8 semesters
 
   const login = async (email: string, password: string) => {
@@ -369,7 +296,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return newAssignment;
   };
 
-  const submitAssignment = (assignmentId: string, studentId: string, answers: Record<string, string>) => {
+  const submitAssignment = (assignmentId: string, studentId: string, answers: Record<string, string>, fileUrl?: string) => {
     const assignment = assignments.find(a => a.id === assignmentId);
     if (!assignment) throw new Error("Assignment not found");
     
@@ -405,6 +332,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
       return a;
     }));
+    
+    // Create submission record
+    const submission: AssignmentSubmission = {
+      id: `submission-${Date.now()}`,
+      assignmentId,
+      studentId,
+      answers,
+      submittedAt: new Date(),
+      score,
+      fileUrl
+    };
+    
+    setSubmissions(prev => [...prev, submission]);
     
     // Generate recommendations based on score
     const totalQuestions = assignment.questions.length;
@@ -518,6 +458,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     return studentPerformance.filter(p => p.studentId === studentId);
   };
 
+  const getSubmissionsByAssignment = (assignmentId: string) => {
+    return submissions.filter(submission => submission.assignmentId === assignmentId);
+  };
+
+  const getSubmissionsByStudent = (studentId: string) => {
+    return submissions.filter(submission => submission.studentId === studentId);
+  };
+
   const value = {
     user,
     users, // Added users to the context value
@@ -537,7 +485,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     semesters,
     updateAttendance,
     getStudentPerformance,
-    studentPerformance
+    studentPerformance,
+    assignments,
+    submissions,
+    getSubmissionsByAssignment,
+    getSubmissionsByStudent
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
