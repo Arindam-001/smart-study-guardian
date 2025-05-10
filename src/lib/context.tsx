@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 // Types
@@ -209,6 +210,7 @@ const MOCK_SUBJECTS: Subject[] = [
 // Context
 interface AppContextType {
   user: User | null;
+  users: User[]; // Added users property to the interface
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -518,6 +520,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const value = {
     user,
+    users, // Added users to the context value
     isAuthenticated: !!user,
     login,
     logout,
