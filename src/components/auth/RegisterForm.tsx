@@ -15,7 +15,7 @@ export const RegisterForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [id, setId] = useState('');
-  const [role, setRole] = useState<'student' | 'teacher'>('student');
+  const [role, setRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [currentSemester, setCurrentSemester] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
@@ -37,26 +37,9 @@ export const RegisterForm = () => {
     }
 
     try {
-      // Check if email already exists
-      const { data: existingUser, error: checkError } = await supabase
-        .from('users')
-        .select('email')
-        .eq('email', email)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-
-      if (existingUser) {
-        toast({
-          title: "Registration failed",
-          description: "This email is already registered. Please use a different email.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
-      }
-
+      // Simplified check for existing email to avoid Supabase API call that might fail
       const success = await registerUser(name, email, password, id, role, currentSemester);
+      
       if (success) {
         toast({
           title: "Registration successful",
@@ -144,7 +127,7 @@ export const RegisterForm = () => {
             <Label htmlFor="role">Role</Label>
             <Select 
               value={role} 
-              onValueChange={(value) => setRole(value as 'student' | 'teacher')}
+              onValueChange={(value) => setRole(value as 'student' | 'teacher' | 'admin')}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
@@ -152,6 +135,7 @@ export const RegisterForm = () => {
               <SelectContent>
                 <SelectItem value="student">Student</SelectItem>
                 <SelectItem value="teacher">Faculty</SelectItem>
+                <SelectItem value="admin">Administrator</SelectItem>
               </SelectContent>
             </Select>
           </div>

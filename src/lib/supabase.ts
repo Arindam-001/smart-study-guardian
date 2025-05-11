@@ -2,15 +2,15 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './database.types';
 
-// Initialize Supabase client with default development values
+// Use demo values for development to prevent errors
 // In production, these should be set as environment variables
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://your-project-url.supabase.co';
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'your-anon-key';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://evyethdpvwfcunbnyhyj.supabase.co';
+const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV2eWV0aGRwdndmY3VuYm55aHlqIiwicm9sZSI6ImFub24iLCJpYXQiOjE2ODYyMjk0ODQsImV4cCI6MjAwMTgwNTQ4NH0.i1SjJOPw6rjJLCGTZf2bELDdSIABl4FX7htnMH3gqV8';
 
 // Check if we're in development and using the fallback values
 if ((!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_KEY) && import.meta.env.DEV) {
-  console.warn('Using fallback Supabase credentials. For development purposes only.');
-  console.warn('Please set up your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
+  console.warn('Using demo Supabase credentials. For development and testing purposes only.');
+  console.warn('This is a public demo database. DO NOT store sensitive information.');
 }
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
