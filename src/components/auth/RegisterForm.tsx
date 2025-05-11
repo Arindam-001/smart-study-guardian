@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/lib/context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { supabase } from '@/lib/supabase';
 
 export const RegisterForm = () => {
   const [name, setName] = useState('');
@@ -25,7 +26,36 @@ export const RegisterForm = () => {
     e.preventDefault();
     setIsLoading(true);
 
+    if (password.length < 6) {
+      toast({
+        title: "Invalid password",
+        description: "Password must be at least 6 characters long.",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
+
     try {
+      // Check if email already exists
+      const { data: existingUser, error: checkError } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingUser) {
+        toast({
+          title: "Registration failed",
+          description: "This email is already registered. Please use a different email.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+
       const success = await registerUser(name, email, password, id, role, currentSemester);
       if (success) {
         toast({
@@ -41,9 +71,10 @@ export const RegisterForm = () => {
         });
       }
     } catch (error) {
+      console.error("Registration error:", error);
       toast({
         title: "Registration error",
-        description: "An unexpected error occurred.",
+        description: "An unexpected error occurred. Please try again later.",
         variant: "destructive"
       });
     } finally {
@@ -106,6 +137,7 @@ export const RegisterForm = () => {
               required
               minLength={6}
             />
+            <p className="text-xs text-muted-foreground">Password must be at least 6 characters long</p>
           </div>
           
           <div className="space-y-2">
@@ -152,14 +184,6 @@ export const RegisterForm = () => {
             disabled={isLoading}
           >
             {isLoading ? "Registering..." : "Register"}
-          </Button>
-          <Button 
-            type="button" 
-            variant="outline" 
-            className="w-full" 
-            onClick={() => navigate('/')}
-          >
-            Back to Login
           </Button>
         </CardFooter>
       </form>

@@ -1,5 +1,6 @@
 
 import { createClient } from '@supabase/supabase-js';
+import type { Database } from './database.types';
 
 // Initialize Supabase client with default development values
 // In production, these should be set as environment variables
@@ -12,7 +13,7 @@ if ((!import.meta.env.VITE_SUPABASE_URL || !import.meta.env.VITE_SUPABASE_ANON_K
   console.warn('Please set up your VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseKey);
+export const supabase = createClient<Database>(supabaseUrl, supabaseKey);
 
 // Type definitions for database
 export type Tables = {

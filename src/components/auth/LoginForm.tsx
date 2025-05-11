@@ -31,14 +31,15 @@ export const LoginForm = () => {
       } else {
         toast({
           title: "Login failed",
-          description: "Invalid email or password. For demo, use student@example.com, teacher@example.com, or admin@example.com with any password.",
+          description: "Invalid email or password. Please check your credentials and try again.",
           variant: "destructive"
         });
       }
     } catch (error) {
+      console.error("Login error:", error);
       toast({
         title: "Login error",
-        description: "An unexpected error occurred.",
+        description: "An unexpected error occurred. Please try again later.",
         variant: "destructive"
       });
     } finally {
@@ -77,13 +78,6 @@ export const LoginForm = () => {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-          </div>
-          <div className="text-sm text-muted-foreground">
-            <p>Demo accounts:</p>
-            <p>student@example.com</p>
-            <p>teacher@example.com</p>
-            <p>admin@example.com</p>
-            <p>(use any password)</p>
           </div>
         </CardContent>
         <CardFooter>
