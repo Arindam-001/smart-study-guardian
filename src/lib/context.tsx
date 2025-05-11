@@ -1,12 +1,15 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { AssignmentSubmission } from './interfaces/assignment';
 import { 
   User, UserRole, ResourceLevel, Subject, Note, Resource, 
   Assignment, Question, Warning, StudentPerformance 
 } from './interfaces/types';
 import { AppContextType } from './interfaces/context';
+import { supabase } from './supabase';
+import { useSupabaseUsers, useSupabaseSubjects } from './hooks/useSupabase';
+import { toast } from '@/components/ui/use-toast';
 
-// Mock data
+// Mock data for initial state
 const MOCK_USERS: User[] = [
   {
     id: '1',
@@ -142,38 +145,215 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
   const semesters = [1, 2, 3, 4, 5, 6, 7, 8]; // Most engineering courses have 8 semesters
 
-  const login = async (email: string, password: string) => {
-    // In a real app, you would call an API here
-    const foundUser = users.find(u => u.email === email);
-    
-    if (foundUser) {
-      setUser(foundUser);
-      return true;
+  // Fetch data from Supabase when available
+  const { data: supabaseUsers, isLoading: usersLoading, error: usersError } = useSupabaseUsers();
+  const { data: supabaseSubjects, isLoading: subjectsLoading, error: subjectsError } = useSupabaseSubjects();
+
+  // Update state with Supabase data when it becomes available
+  useEffect(() => {
+    if (supabaseUsers && !usersLoading && !usersError) {
+      setUsers(supabaseUsers);
     }
-    return false;
+  }, [supabaseUsers, usersLoading, usersError]);
+
+  useEffect(() => {
+    if (supabaseSubjects && !subjectsLoading && !subjectsError) {
+      setSubjects(supabaseSubjects);
+    }
+  }, [supabaseSubjects, subjectsLoading, subjectsError]);
+
+  // Initialize the user from Supabase auth session
+  useEffect(() => {
+    const fetchSession = async () => {
+      const { data, error } = await supabase.auth.getSession();
+      if (!error && data.session?.user) {
+        // Fetch user data from our users table using the auth ID
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', data.session.user.email)
+          .single();
+          
+        if (!userError && userData) {
+          setUser({
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            role: userData.role,
+            currentSemester: userData.current_semester,
+            accessibleSemesters: userData.accessible_semesters,
+          });
+        }
+      }
+    };
+
+    fetchSession();
+
+    // Listen for auth changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (event === 'SIGNED_IN' && session?.user) {
+          // Fetch user data
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', session.user.email)
+            .single();
+            
+          if (!userError && userData) {
+            setUser({
+              id: userData.id,
+              name: userData.name,
+              email: userData.email,
+              role: userData.role,
+              currentSemester: userData.current_semester,
+              accessibleSemesters: userData.accessible_semesters,
+            });
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+      }
+    );
+
+    // Cleanup subscription
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      
+      if (error) {
+        // For demo purposes, allow fallback to mock login
+        const foundUser = users.find(u => u.email === email);
+        if (foundUser) {
+          setUser(foundUser);
+          return true;
+        }
+        return false;
+      }
+      
+      if (data.user) {
+        // Fetch user data
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('email', data.user.email)
+          .single();
+          
+        if (!userError && userData) {
+          setUser({
+            id: userData.id,
+            name: userData.name,
+            email: userData.email,
+            role: userData.role,
+            currentSemester: userData.current_semester,
+            accessibleSemesters: userData.accessible_semesters,
+          });
+          return true;
+        }
+      }
+      
+      return false;
+    } catch (err) {
+      console.error("Login error:", err);
+      // Fallback to mock login for demo
+      const foundUser = users.find(u => u.email === email);
+      if (foundUser) {
+        setUser(foundUser);
+        return true;
+      }
+      return false;
+    }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
   };
 
   const registerUser = async (name: string, email: string, password: string, id: string, role: UserRole, currentSemester: number = 1) => {
-    // Check if email or ID already exists
-    if (users.some(u => u.email === email || u.id === id)) {
-      return false;
+    try {
+      // Check if email or ID already exists
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('id, email')
+        .or(`email.eq.${email},id.eq.${id}`)
+        .single();
+        
+      if (existingUser) {
+        return false;
+      }
+      
+      // Register with Auth
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+      
+      if (error) {
+        console.error("Auth registration error:", error);
+        return false;
+      }
+      
+      // Create user in database
+      const { error: insertError } = await supabase
+        .from('users')
+        .insert({
+          id,
+          name,
+          email,
+          role,
+          current_semester: role === 'student' ? currentSemester : 0,
+          accessible_semesters: role === 'student' ? [currentSemester] : [1, 2, 3, 4, 5, 6, 7, 8],
+          auth_id: data.user?.id,
+        });
+        
+      if (insertError) {
+        console.error("Database registration error:", insertError);
+        return false;
+      }
+      
+      // Refresh users
+      const { data: updatedUsers } = await supabase.from('users').select('*');
+      if (updatedUsers) {
+        setUsers(updatedUsers.map(u => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          currentSemester: u.current_semester,
+          accessibleSemesters: u.accessible_semesters,
+        })));
+      }
+      
+      return true;
+    } catch (err) {
+      console.error("Registration error:", err);
+      
+      // Fallback to mock registration for demo
+      if (users.some(u => u.email === email || u.id === id)) {
+        return false;
+      }
+      
+      const newUser: User = {
+        id,
+        name,
+        email,
+        role,
+        currentSemester: role === 'student' ? currentSemester : 0,
+        accessibleSemesters: role === 'student' ? [currentSemester] : [1, 2, 3, 4, 5, 6, 7, 8],
+      };
+      
+      setUsers(prev => [...prev, newUser]);
+      return true;
     }
-    
-    const newUser: User = {
-      id,
-      name,
-      email,
-      role,
-      currentSemester: role === 'student' ? currentSemester : 0,
-      accessibleSemesters: role === 'student' ? [currentSemester] : [1, 2, 3, 4, 5, 6, 7, 8],
-    };
-    
-    setUsers(prev => [...prev, newUser]);
-    return true;
   };
 
   const addSubject = (subject: Omit<Subject, 'id' | 'notes'>) => {
