@@ -1,3 +1,4 @@
+
 import { supabase } from './supabase';
 import { User, UserRole } from './interfaces/types';
 import { Tables } from './supabase';
@@ -59,14 +60,17 @@ export const signUp = async (
       .from('users')
       .select('id, email')
       .or(`email.eq.${email},id.eq.${id}`)
-      .maybeSingle();
+      .single();
 
-    if (checkError) {
+    if (checkError && checkError.code !== 'PGRST116') {
+      // PGRST116 is the error code for "no rows returned", which is what we want
       console.error('Error checking existing user:', checkError);
       return false;
     }
 
+    // If we got a result, then the user already exists
     if (existingUser) {
+      console.log('User already exists:', existingUser);
       return false;
     }
 
