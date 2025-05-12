@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Check, X, FileUp, Upload, Trash } from 'lucide-react';
+import StudentAttendanceView from '@/components/faculty/StudentAttendanceView';
 
 const FacultyDashboard = () => {
   const { user, subjects, addResource, updateAttendance } = useAppContext();
@@ -176,6 +177,7 @@ const FacultyDashboard = () => {
               <TabsList className="mb-6">
                 <TabsTrigger value="resources">Manage Resources</TabsTrigger>
                 <TabsTrigger value="attendance">Manage Attendance</TabsTrigger>
+                <TabsTrigger value="view-attendance">View Attendance</TabsTrigger>
                 <TabsTrigger value="students">View Students</TabsTrigger>
               </TabsList>
 
@@ -388,6 +390,10 @@ const FacultyDashboard = () => {
                     </TableBody>
                   </Table>
                 </div>
+              </TabsContent>
+
+              <TabsContent value="view-attendance">
+                <StudentAttendanceView subjectId={selectedSubject} />
               </TabsContent>
 
               <TabsContent value="students">

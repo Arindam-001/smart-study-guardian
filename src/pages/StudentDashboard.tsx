@@ -5,7 +5,7 @@ import { useAppContext } from '@/lib/context';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { BookOpen, Calendar, History, List, FileText } from 'lucide-react';
-import { ResourceLevel } from '@/lib/interfaces/types';
+import { ResourceLevel, Resource } from '@/lib/interfaces/types';
 import RecommendationsCard from '@/components/student/RecommendationsCard';
 import HistoryCard from '@/components/student/HistoryCard';
 import StudentDashboardHeader from '@/components/dashboard/StudentDashboardHeader';
@@ -13,10 +13,13 @@ import OverviewTab from '@/components/dashboard/OverviewTab';
 import AssignmentsTab from '@/components/dashboard/AssignmentsTab';
 import PerformanceTab from '@/components/dashboard/PerformanceTab';
 import AttendanceTab from '@/components/dashboard/AttendanceTab';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 const StudentDashboard = () => {
   const { user, subjects, getStudentPerformance } = useAppContext();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [showAllResources, setShowAllResources] = useState(false);
   
   useEffect(() => {
     if (subjects.length > 0 && !selectedSubject) {
@@ -45,6 +48,14 @@ const StudentDashboard = () => {
   const allRecommendations = studentPerformances
     .flatMap(p => p.recommendedResources || [])
     // Remove duplicates based on resource ID
+    .filter((res, index, self) => 
+      index === self.findIndex(r => r.id === res.id)
+    );
+
+  // Get all resources from the student's current semester subjects
+  const allResources: Resource[] = subjects
+    .filter(subject => user.accessibleSemesters.includes(subject.semesterId))
+    .flatMap(subject => subject.resources || [])
     .filter((res, index, self) => 
       index === self.findIndex(r => r.id === res.id)
     );
@@ -158,7 +169,23 @@ const StudentDashboard = () => {
         </div>
         
         <div>
-          <RecommendationsCard resources={allRecommendations} studentLevel={studentLevel} />
+          <div className="flex items-center space-x-2 mb-4">
+            <Switch 
+              id="resource-mode" 
+              checked={showAllResources} 
+              onCheckedChange={setShowAllResources}
+            />
+            <Label htmlFor="resource-mode">
+              {showAllResources ? "Show All Resources" : "Show Recommendations"}
+            </Label>
+          </div>
+        
+          <RecommendationsCard 
+            resources={allRecommendations} 
+            studentLevel={studentLevel} 
+            allResources={allResources}
+            showAllResources={showAllResources}
+          />
         </div>
       </div>
     </DashboardLayout>

@@ -8,9 +8,16 @@ import { BookOpen, Video, Link } from 'lucide-react';
 interface RecommendationsCardProps {
   resources: Resource[];
   studentLevel?: 'beginner' | 'intermediate' | 'advanced';
+  allResources?: Resource[];
+  showAllResources?: boolean;
 }
 
-const RecommendationsCard = ({ resources, studentLevel = 'beginner' }: RecommendationsCardProps) => {
+const RecommendationsCard = ({ 
+  resources, 
+  studentLevel = 'beginner',
+  allResources = [],
+  showAllResources = false
+}: RecommendationsCardProps) => {
   const getLevelColor = (level: string) => {
     switch (level) {
       case 'beginner': return 'bg-green-100 text-green-800';
@@ -29,8 +36,11 @@ const RecommendationsCard = ({ resources, studentLevel = 'beginner' }: Recommend
     }
   };
 
-  // Filter resources based on student level
-  const filteredResources = resources.filter(resource => {
+  // Display resources based on mode
+  const displayResources = showAllResources ? allResources : resources;
+
+  // Filter resources based on student level if not in "show all" mode
+  const filteredResources = !showAllResources ? displayResources.filter(resource => {
     if (studentLevel === 'beginner') {
       // Beginner students get beginner resources
       return resource.level === 'beginner';
@@ -41,14 +51,14 @@ const RecommendationsCard = ({ resources, studentLevel = 'beginner' }: Recommend
       // Advanced students get all resources
       return true;
     }
-  });
+  }) : displayResources;
 
   return (
     <Card className="mb-4">
       <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium flex items-center justify-between">
-          <span>Recommended Resources</span>
-          {studentLevel && (
+          <span>{showAllResources ? "All Subject Resources" : "Recommended Resources"}</span>
+          {!showAllResources && studentLevel && (
             <Badge className={getLevelColor(studentLevel)}>
               {studentLevel.charAt(0).toUpperCase() + studentLevel.slice(1)}
             </Badge>
@@ -57,7 +67,12 @@ const RecommendationsCard = ({ resources, studentLevel = 'beginner' }: Recommend
       </CardHeader>
       <CardContent>
         {filteredResources.length === 0 ? (
-          <p className="text-sm text-gray-500">No recommendations available yet. Complete an assignment to get personalized recommendations.</p>
+          <p className="text-sm text-gray-500">
+            {showAllResources 
+              ? "No resources available for your subjects yet." 
+              : "No recommendations available yet. Complete an assignment to get personalized recommendations."
+            }
+          </p>
         ) : (
           <ul className="space-y-3">
             {filteredResources.map(resource => (
