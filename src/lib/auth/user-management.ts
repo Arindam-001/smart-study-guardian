@@ -1,6 +1,6 @@
 
-import { supabase } from '../supabase';
 import { User, UserRole } from '../interfaces/types';
+import { getItem, setItem, STORAGE_KEYS } from '../local-storage';
 
 export const signUp = async (
   name: string,
@@ -11,71 +11,37 @@ export const signUp = async (
   currentSemester: number = 1
 ): Promise<boolean> => {
   try {
-    // First, check if the email already exists by properly parameterizing the query
-    const { data: existingEmail, error: emailError } = await supabase
-      .from('users')
-      .select('email')
-      .eq('email', email)
-      .maybeSingle();
-
-    if (emailError && emailError.code !== 'PGRST116') {
-      console.error('Error checking existing email:', emailError);
-      return false;
-    }
-
+    // Get existing users
+    const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
+    
+    // Check if email already exists
+    const existingEmail = users.find(u => u.email === email);
     if (existingEmail) {
-      console.log('Email already exists:', existingEmail);
+      console.error('Email already exists');
       return false;
     }
-
-    // Then check if the ID already exists
-    const { data: existingId, error: idError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', id)
-      .maybeSingle();
-
-    if (idError && idError.code !== 'PGRST116') {
-      console.error('Error checking existing ID:', idError);
-      return false;
-    }
-
+    
+    // Check if ID already exists
+    const existingId = users.find(u => u.id === id);
     if (existingId) {
-      console.log('ID already exists:', existingId);
+      console.error('ID already exists');
       return false;
     }
-
-    // Register with Auth
-    const { data, error } = await supabase.auth.signUp({
+    
+    // Create new user
+    const newUser: User = {
+      id,
+      name,
       email,
-      password,
-    });
-
-    if (error || !data.user) {
-      console.error('Auth registration error:', error?.message);
-      return false;
-    }
-
-    // Create user in database
-    const { error: insertError } = await supabase
-      .from('users')
-      .insert({
-        id,
-        name,
-        email,
-        role,
-        current_semester: role === 'student' ? currentSemester : 0,
-        accessible_semesters: role === 'student' ? [currentSemester] : [1, 2, 3, 4, 5, 6, 7, 8],
-        auth_id: data.user.id,
-      });
-
-    if (insertError) {
-      console.error('Database registration error:', insertError);
-      // If user creation fails, we should clean up the auth user
-      await supabase.auth.admin.deleteUser(data.user.id);
-      return false;
-    }
-
+      role,
+      currentSemester: role === 'student' ? currentSemester : 0,
+      accessibleSemesters: role === 'student' ? [currentSemester] : [1, 2, 3, 4, 5, 6, 7, 8],
+    };
+    
+    // Add user to users array and save to localStorage
+    users.push(newUser);
+    setItem(STORAGE_KEYS.USERS, users);
+    
     return true;
   } catch (error) {
     console.error('Registration error:', error);

@@ -1,123 +1,66 @@
 
-import { supabase } from '../supabase';
-import { User, UserRole } from '../interfaces/types';
-import { toast } from '@/components/ui/use-toast';
+import { User } from '../interfaces/types';
+import { getItem, setItem, removeItem, STORAGE_KEYS } from '../local-storage';
 
 export const signIn = async (email: string, password: string): Promise<User | null> => {
   try {
-    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (authError) {
-      console.error('Authentication error:', authError.message);
+    const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
+    const user = users.find(u => u.email === email);
+    
+    if (!user) {
+      console.error('User not found');
       return null;
     }
 
-    if (!authData.user) {
-      return null;
-    }
-
-    // Get user data from users table
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', authData.user.email)
-      .single();
-
-    if (userError || !userData) {
-      console.error('User data fetch error:', userError?.message);
-      return null;
-    }
-
-    return {
-      id: userData.id,
-      name: userData.name,
-      email: userData.email,
-      role: userData.role as UserRole,
-      currentSemester: userData.current_semester,
-      accessibleSemesters: userData.accessible_semesters,
-    };
+    // In a real app, you would hash passwords and compare them securely
+    // For this demo, we're just checking email existence
+    const currentUser = { ...user };
+    
+    // Store the authenticated user
+    setItem(STORAGE_KEYS.AUTH_USER, currentUser);
+    
+    return currentUser;
   } catch (error) {
-    console.error('Login error:', error);
+    console.error('Sign in error:', error);
     return null;
   }
 };
 
 export const signOut = async (): Promise<void> => {
-  await supabase.auth.signOut();
+  try {
+    removeItem(STORAGE_KEYS.AUTH_USER);
+  } catch (error) {
+    console.error('Sign out error:', error);
+  }
 };
 
 export const getCurrentUser = async (): Promise<User | null> => {
   try {
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-    
-    if (sessionError) {
-      console.error('Session error:', sessionError.message);
-      return null;
-    }
-    
-    if (!sessionData.session?.user) {
-      return null;
-    }
-    
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('*')
-      .eq('email', sessionData.session.user.email)
-      .single();
-      
-    if (userError || !userData) {
-      console.error('User data fetch error:', userError?.message);
-      return null;
-    }
-    
-    return {
-      id: userData.id,
-      name: userData.name,
-      email: userData.email,
-      role: userData.role as UserRole,
-      currentSemester: userData.current_semester,
-      accessibleSemesters: userData.accessible_semesters,
-    };
+    return getItem<User | null>(STORAGE_KEYS.AUTH_USER, null);
   } catch (error) {
     console.error('Get current user error:', error);
     return null;
   }
 };
 
-// Setup auth state change listener
 export const setupAuthListener = (callback: (user: User | null) => void): (() => void) => {
-  const { data } = supabase.auth.onAuthStateChange(async (event, session) => {
-    if (event === 'SIGNED_IN' && session?.user) {
-      // Get user data when signed in
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('*')
-        .eq('email', session.user.email)
-        .single();
-        
-      if (userError || !userData) {
-        console.error('User data fetch error:', userError?.message);
+  // Create a simple "listener" using localStorage events
+  const handleStorageChange = (event: StorageEvent) => {
+    if (event.key === STORAGE_KEYS.AUTH_USER) {
+      try {
+        const user = event.newValue ? JSON.parse(event.newValue) as User : null;
+        callback(user);
+      } catch (error) {
+        console.error('Error parsing auth user from storage event:', error);
         callback(null);
-        return;
       }
-      
-      callback({
-        id: userData.id,
-        name: userData.name,
-        email: userData.email,
-        role: userData.role as UserRole,
-        currentSemester: userData.current_semester,
-        accessibleSemesters: userData.accessible_semesters,
-      });
-    } else if (event === 'SIGNED_OUT') {
-      callback(null);
     }
-  });
+  };
+
+  window.addEventListener('storage', handleStorageChange);
   
+  // Return a cleanup function
   return () => {
-    data.subscription.unsubscribe();
+    window.removeEventListener('storage', handleStorageChange);
   };
 };

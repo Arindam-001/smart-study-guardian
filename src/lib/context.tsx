@@ -5,339 +5,232 @@ import {
   Assignment, Question, Warning, StudentPerformance 
 } from './interfaces/types';
 import { AppContextType } from './interfaces/context';
-import { supabase } from './supabase';
-import { useSupabaseUsers, useSupabaseSubjects } from './hooks/useSupabase';
-import { toast } from '@/components/ui/use-toast';
-
-// Mock data for initial state
-const MOCK_USERS: User[] = [
-  {
-    id: '1',
-    name: 'Student User',
-    email: 'student@example.com',
-    role: 'student',
-    currentSemester: 1,
-    accessibleSemesters: [1]
-  },
-  {
-    id: '2',
-    name: 'Teacher User',
-    email: 'teacher@example.com',
-    role: 'teacher',
-    currentSemester: 0,
-    accessibleSemesters: [1, 2, 3, 4, 5, 6, 7, 8]
-  },
-  {
-    id: '3',
-    name: 'Admin User',
-    email: 'admin@example.com',
-    role: 'admin',
-    currentSemester: 0,
-    accessibleSemesters: [1, 2, 3, 4, 5, 6, 7, 8]
-  }
-];
-
-const MOCK_SUBJECTS: Subject[] = [
-  {
-    id: '1',
-    name: 'Introduction to Computer Science',
-    semesterId: 1,
-    teacherId: '2',
-    notes: [
-      {
-        id: '1',
-        title: 'Basics of Programming',
-        content: 'Programming is the process of creating a set of instructions that tell a computer how to perform a task...',
-        createdAt: new Date(),
-        updatedAt: new Date()
-      }
-    ],
-    resources: [
-      {
-        id: 'r1',
-        title: 'Introduction to Python - Beginners',
-        type: 'video',
-        url: 'https://www.youtube.com/watch?v=example1',
-        level: 'beginner',
-        topic: 'programming basics',
-        createdAt: new Date(),
-        subjectId: '1'
-      },
-      {
-        id: 'r2',
-        title: 'Object-Oriented Programming Concepts - Intermediate',
-        type: 'video',
-        url: 'https://www.youtube.com/watch?v=example2',
-        level: 'intermediate',
-        topic: 'oop',
-        createdAt: new Date(),
-        subjectId: '1'
-      },
-      {
-        id: 'r3',
-        title: 'Advanced Data Structures - Expert Level',
-        type: 'document',
-        url: 'https://example.com/advanced-data-structures',
-        level: 'advanced',
-        topic: 'data structures',
-        createdAt: new Date(),
-        subjectId: '1'
-      }
-    ]
-  },
-  {
-    id: '2',
-    name: 'Calculus',
-    semesterId: 1,
-    teacherId: '2',
-    notes: [],
-    resources: [
-      {
-        id: 'r4',
-        title: 'Introduction to Calculus',
-        type: 'video',
-        url: 'https://www.youtube.com/watch?v=example4',
-        level: 'beginner',
-        topic: 'limits',
-        createdAt: new Date(),
-        subjectId: '2'
-      },
-      {
-        id: 'r5',
-        title: 'Intermediate Calculus - Derivatives',
-        type: 'link',
-        url: 'https://example.com/derivatives',
-        level: 'intermediate',
-        topic: 'derivatives',
-        createdAt: new Date(),
-        subjectId: '2'
-      }
-    ]
-  },
-  {
-    id: '3',
-    name: 'Physics I',
-    semesterId: 1,
-    teacherId: '2',
-    notes: [],
-    resources: []
-  },
-  {
-    id: '4',
-    name: 'Data Structures',
-    semesterId: 2,
-    teacherId: '2',
-    notes: [],
-    resources: []
-  }
-];
+import { getItem, setItem, STORAGE_KEYS } from './local-storage';
+import { getCurrentUser, signIn as authSignIn, signOut as authSignOut } from './auth';
 
 // Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(MOCK_USERS);
-  const [subjects, setSubjects] = useState<Subject[]>(MOCK_SUBJECTS);
+  const [users, setUsers] = useState<User[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
   const [warnings, setWarnings] = useState<Warning[]>([]);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [studentPerformance, setStudentPerformance] = useState<StudentPerformance[]>([]);
   const [submissions, setSubmissions] = useState<AssignmentSubmission[]>([]);
   const semesters = [1, 2, 3, 4, 5, 6, 7, 8]; // Most engineering courses have 8 semesters
 
-  // Fetch data from Supabase when available
-  const { data: supabaseUsers, isLoading: usersLoading, error: usersError } = useSupabaseUsers();
-  const { data: supabaseSubjects, isLoading: subjectsLoading, error: subjectsError } = useSupabaseSubjects();
-
-  // Update state with Supabase data when it becomes available
+  // Load initial data from localStorage
   useEffect(() => {
-    if (supabaseUsers && !usersLoading && !usersError) {
-      setUsers(supabaseUsers);
-    }
-  }, [supabaseUsers, usersLoading, usersError]);
-
-  useEffect(() => {
-    if (supabaseSubjects && !subjectsLoading && !subjectsError) {
-      setSubjects(supabaseSubjects);
-    }
-  }, [supabaseSubjects, subjectsLoading, subjectsError]);
-
-  // Initialize the user from Supabase auth session
-  useEffect(() => {
-    const fetchSession = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (!error && data.session?.user) {
-        // Fetch user data from our users table using the auth ID
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', data.session.user.email)
-          .single();
-          
-        if (!userError && userData) {
-          setUser({
-            id: userData.id,
-            name: userData.name,
-            email: userData.email,
-            role: userData.role,
-            currentSemester: userData.current_semester,
-            accessibleSemesters: userData.accessible_semesters,
-          });
-        }
+    const loadInitialData = async () => {
+      // Load user
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
       }
-    };
-
-    fetchSession();
-
-    // Listen for auth changes
-    const { data: authListener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === 'SIGNED_IN' && session?.user) {
-          // Fetch user data
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('*')
-            .eq('email', session.user.email)
-            .single();
-            
-          if (!userError && userData) {
-            setUser({
-              id: userData.id,
-              name: userData.name,
-              email: userData.email,
-              role: userData.role,
-              currentSemester: userData.current_semester,
-              accessibleSemesters: userData.accessible_semesters,
-            });
+      
+      // Load users
+      const storedUsers = getItem<User[]>(STORAGE_KEYS.USERS, []);
+      if (storedUsers.length === 0) {
+        // Initialize with default users if none exist
+        const defaultUsers: User[] = [
+          {
+            id: '1',
+            name: 'Student User',
+            email: 'student@example.com',
+            role: 'student',
+            currentSemester: 1,
+            accessibleSemesters: [1]
+          },
+          {
+            id: '2',
+            name: 'Teacher User',
+            email: 'teacher@example.com',
+            role: 'teacher',
+            currentSemester: 0,
+            accessibleSemesters: [1, 2, 3, 4, 5, 6, 7, 8]
+          },
+          {
+            id: '3',
+            name: 'Admin User',
+            email: 'admin@example.com',
+            role: 'admin',
+            currentSemester: 0,
+            accessibleSemesters: [1, 2, 3, 4, 5, 6, 7, 8]
           }
-        } else if (event === 'SIGNED_OUT') {
-          setUser(null);
-        }
+        ];
+        setUsers(defaultUsers);
+        setItem(STORAGE_KEYS.USERS, defaultUsers);
+      } else {
+        setUsers(storedUsers);
       }
-    );
-
-    // Cleanup subscription
-    return () => {
-      authListener.subscription.unsubscribe();
+      
+      // Load subjects
+      const storedSubjects = getItem<Subject[]>(STORAGE_KEYS.SUBJECTS, []);
+      if (storedSubjects.length === 0) {
+        // Initialize with default subjects if none exist
+        const defaultSubjects: Subject[] = [
+          {
+            id: '1',
+            name: 'Introduction to Computer Science',
+            semesterId: 1,
+            teacherId: '2',
+            notes: [
+              {
+                id: '1',
+                title: 'Basics of Programming',
+                content: 'Programming is the process of creating a set of instructions that tell a computer how to perform a task...',
+                createdAt: new Date(),
+                updatedAt: new Date()
+              }
+            ],
+            resources: [
+              {
+                id: 'r1',
+                title: 'Introduction to Python - Beginners',
+                type: 'video',
+                url: 'https://www.youtube.com/watch?v=example1',
+                level: 'beginner',
+                topic: 'programming basics',
+                createdAt: new Date(),
+                subjectId: '1'
+              },
+              {
+                id: 'r2',
+                title: 'Object-Oriented Programming Concepts - Intermediate',
+                type: 'video',
+                url: 'https://www.youtube.com/watch?v=example2',
+                level: 'intermediate',
+                topic: 'oop',
+                createdAt: new Date(),
+                subjectId: '1'
+              },
+              {
+                id: 'r3',
+                title: 'Advanced Data Structures - Expert Level',
+                type: 'document',
+                url: 'https://example.com/advanced-data-structures',
+                level: 'advanced',
+                topic: 'data structures',
+                createdAt: new Date(),
+                subjectId: '1'
+              }
+            ]
+          },
+          {
+            id: '2',
+            name: 'Calculus',
+            semesterId: 1,
+            teacherId: '2',
+            notes: [],
+            resources: [
+              {
+                id: 'r4',
+                title: 'Introduction to Calculus',
+                type: 'video',
+                url: 'https://www.youtube.com/watch?v=example4',
+                level: 'beginner',
+                topic: 'limits',
+                createdAt: new Date(),
+                subjectId: '2'
+              },
+              {
+                id: 'r5',
+                title: 'Intermediate Calculus - Derivatives',
+                type: 'link',
+                url: 'https://example.com/derivatives',
+                level: 'intermediate',
+                topic: 'derivatives',
+                createdAt: new Date(),
+                subjectId: '2'
+              }
+            ]
+          },
+          {
+            id: '3',
+            name: 'Physics I',
+            semesterId: 1,
+            teacherId: '2',
+            notes: [],
+            resources: []
+          },
+          {
+            id: '4',
+            name: 'Data Structures',
+            semesterId: 2,
+            teacherId: '2',
+            notes: [],
+            resources: []
+          }
+        ];
+        setSubjects(defaultSubjects);
+        setItem(STORAGE_KEYS.SUBJECTS, defaultSubjects);
+      } else {
+        setSubjects(storedSubjects);
+      }
+      
+      // Load other data from localStorage
+      setWarnings(getItem<Warning[]>(STORAGE_KEYS.WARNINGS, []));
+      setAssignments(getItem<Assignment[]>(STORAGE_KEYS.ASSIGNMENTS, []));
+      setStudentPerformance(getItem<StudentPerformance[]>(STORAGE_KEYS.STUDENT_PERFORMANCE, []));
+      setSubmissions(getItem<AssignmentSubmission[]>(STORAGE_KEYS.SUBMISSIONS, []));
     };
+    
+    loadInitialData();
   }, []);
+  
+  // Save data to localStorage whenever it changes
+  useEffect(() => {
+    if (users.length > 0) {
+      setItem(STORAGE_KEYS.USERS, users);
+    }
+  }, [users]);
+  
+  useEffect(() => {
+    if (subjects.length > 0) {
+      setItem(STORAGE_KEYS.SUBJECTS, subjects);
+    }
+  }, [subjects]);
+  
+  useEffect(() => {
+    setItem(STORAGE_KEYS.WARNINGS, warnings);
+  }, [warnings]);
+  
+  useEffect(() => {
+    setItem(STORAGE_KEYS.ASSIGNMENTS, assignments);
+  }, [assignments]);
+  
+  useEffect(() => {
+    setItem(STORAGE_KEYS.STUDENT_PERFORMANCE, studentPerformance);
+  }, [studentPerformance]);
+  
+  useEffect(() => {
+    setItem(STORAGE_KEYS.SUBMISSIONS, submissions);
+  }, [submissions]);
 
   const login = async (email: string, password: string) => {
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      if (error) {
-        // For demo purposes, allow fallback to mock login
-        const foundUser = users.find(u => u.email === email);
-        if (foundUser) {
-          setUser(foundUser);
-          return true;
-        }
-        return false;
+      const loggedInUser = await authSignIn(email, password);
+      if (loggedInUser) {
+        setUser(loggedInUser);
+        return true;
       }
-      
-      if (data.user) {
-        // Fetch user data
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('email', data.user.email)
-          .single();
-          
-        if (!userError && userData) {
-          setUser({
-            id: userData.id,
-            name: userData.name,
-            email: userData.email,
-            role: userData.role,
-            currentSemester: userData.current_semester,
-            accessibleSemesters: userData.accessible_semesters,
-          });
-          return true;
-        }
-      }
-      
       return false;
     } catch (err) {
       console.error("Login error:", err);
-      // Fallback to mock login for demo
-      const foundUser = users.find(u => u.email === email);
-      if (foundUser) {
-        setUser(foundUser);
-        return true;
-      }
       return false;
     }
   };
 
   const logout = async () => {
-    await supabase.auth.signOut();
+    await authSignOut();
     setUser(null);
   };
 
   const registerUser = async (name: string, email: string, password: string, id: string, role: UserRole, currentSemester: number = 1) => {
     try {
       // Check if email or ID already exists
-      const { data: existingUser } = await supabase
-        .from('users')
-        .select('id, email')
-        .or(`email.eq.${email},id.eq.${id}`)
-        .single();
-        
-      if (existingUser) {
-        return false;
-      }
-      
-      // Register with Auth
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
-      
-      if (error) {
-        console.error("Auth registration error:", error);
-        return false;
-      }
-      
-      // Create user in database
-      const { error: insertError } = await supabase
-        .from('users')
-        .insert({
-          id,
-          name,
-          email,
-          role,
-          current_semester: role === 'student' ? currentSemester : 0,
-          accessible_semesters: role === 'student' ? [currentSemester] : [1, 2, 3, 4, 5, 6, 7, 8],
-          auth_id: data.user?.id,
-        });
-        
-      if (insertError) {
-        console.error("Database registration error:", insertError);
-        return false;
-      }
-      
-      // Refresh users
-      const { data: updatedUsers } = await supabase.from('users').select('*');
-      if (updatedUsers) {
-        setUsers(updatedUsers.map(u => ({
-          id: u.id,
-          name: u.name,
-          email: u.email,
-          role: u.role,
-          currentSemester: u.current_semester,
-          accessibleSemesters: u.accessible_semesters,
-        })));
-      }
-      
-      return true;
-    } catch (err) {
-      console.error("Registration error:", err);
-      
-      // Fallback to mock registration for demo
       if (users.some(u => u.email === email || u.id === id)) {
         return false;
       }
@@ -353,6 +246,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       
       setUsers(prev => [...prev, newUser]);
       return true;
+    } catch (err) {
+      console.error("Registration error:", err);
+      return false;
     }
   };
 
