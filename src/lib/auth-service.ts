@@ -55,22 +55,37 @@ export const signUp = async (
   currentSemester: number = 1
 ): Promise<boolean> => {
   try {
-    // First, check if the email or ID already exists
-    const { data: existingUser, error: checkError } = await supabase
+    // First, check if the email already exists by properly parameterizing the query
+    const { data: existingEmail, error: emailError } = await supabase
       .from('users')
-      .select('id, email')
-      .or(`email.eq.${email},id.eq.${id}`)
-      .single();
+      .select('email')
+      .eq('email', email)
+      .maybeSingle();
 
-    if (checkError && checkError.code !== 'PGRST116') {
-      // PGRST116 is the error code for "no rows returned", which is what we want
-      console.error('Error checking existing user:', checkError);
+    if (emailError && emailError.code !== 'PGRST116') {
+      console.error('Error checking existing email:', emailError);
       return false;
     }
 
-    // If we got a result, then the user already exists
-    if (existingUser) {
-      console.log('User already exists:', existingUser);
+    if (existingEmail) {
+      console.log('Email already exists:', existingEmail);
+      return false;
+    }
+
+    // Then check if the ID already exists
+    const { data: existingId, error: idError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (idError && idError.code !== 'PGRST116') {
+      console.error('Error checking existing ID:', idError);
+      return false;
+    }
+
+    if (existingId) {
+      console.log('ID already exists:', existingId);
       return false;
     }
 
