@@ -9,8 +9,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, FileUp, Upload, Trash } from 'lucide-react';
+import { Check, X, FileUp, Upload, Trash, BookOpen, Video, Play } from 'lucide-react';
 import StudentAttendanceView from '@/components/faculty/StudentAttendanceView';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 const FacultyDashboard = () => {
   const { user, subjects, addResource, updateAttendance } = useAppContext();
@@ -22,6 +24,8 @@ const FacultyDashboard = () => {
   const [resourceTopic, setResourceTopic] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedNote, setSelectedNote] = useState<any>(null);
+  const [selectedResource, setSelectedResource] = useState<any>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -140,6 +144,14 @@ const FacultyDashboard = () => {
     { id: '5', name: 'Jane Smith', email: 'jane@example.com' }
   ];
 
+  const currentSubject = subjects.find(s => s.id === selectedSubject);
+  
+  // Separate resources by type
+  const videoResources = currentSubject?.resources?.filter(r => r.type === 'video') || [];
+  const documentResources = currentSubject?.resources?.filter(r => r.type === 'document') || [];
+  const linkResources = currentSubject?.resources?.filter(r => r.type === 'link') || [];
+  const notes = currentSubject?.notes || [];
+
   return (
     <DashboardLayout title="Faculty Dashboard">
       <Card>
@@ -176,6 +188,7 @@ const FacultyDashboard = () => {
             <Tabs defaultValue="resources">
               <TabsList className="mb-6">
                 <TabsTrigger value="resources">Manage Resources</TabsTrigger>
+                <TabsTrigger value="notes">Manage Notes</TabsTrigger>
                 <TabsTrigger value="attendance">Manage Attendance</TabsTrigger>
                 <TabsTrigger value="view-attendance">View Attendance</TabsTrigger>
                 <TabsTrigger value="students">View Students</TabsTrigger>
@@ -300,39 +313,175 @@ const FacultyDashboard = () => {
                   </Button>
                 </form>
 
-                <div className="mt-6">
-                  <h3 className="text-lg font-medium mb-4">Existing Resources</h3>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Title</TableHead>
-                        <TableHead>Type</TableHead>
-                        <TableHead>Level</TableHead>
-                        <TableHead>Topic</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {subjects
-                        .find(s => s.id === selectedSubject)
-                        ?.resources?.map(resource => (
+                <div className="mt-6 space-y-8">
+                  <div>
+                    <h3 className="text-lg font-medium mb-4 flex items-center">
+                      <Video className="h-5 w-5 mr-2" />
+                      Video Resources
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Level</TableHead>
+                          <TableHead>Topic</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {videoResources.length > 0 ? videoResources.map(resource => (
                           <TableRow key={resource.id}>
                             <TableCell>{resource.title}</TableCell>
-                            <TableCell>
-                              <span className="capitalize">{resource.type}</span>
-                            </TableCell>
                             <TableCell>
                               <span className="capitalize">{resource.level}</span>
                             </TableCell>
                             <TableCell>{resource.topic}</TableCell>
-                          </TableRow>
-                        )) || (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center">
-                              No resources added yet
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setSelectedResource(resource)}
+                                className="flex items-center"
+                              >
+                                <Play className="h-3 w-3 mr-1" /> Preview
+                              </Button>
                             </TableCell>
                           </TableRow>
-                        )
-                      }
+                        )) : (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center">
+                              No video resources added yet
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-medium mb-4 flex items-center">
+                      <BookOpen className="h-5 w-5 mr-2" />
+                      Document Resources
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Level</TableHead>
+                          <TableHead>Topic</TableHead>
+                          <TableHead>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {documentResources.length > 0 ? documentResources.map(resource => (
+                          <TableRow key={resource.id}>
+                            <TableCell>{resource.title}</TableCell>
+                            <TableCell>
+                              <span className="capitalize">{resource.level}</span>
+                            </TableCell>
+                            <TableCell>{resource.topic}</TableCell>
+                            <TableCell>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => setSelectedResource(resource)}
+                              >
+                                View
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        )) : (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center">
+                              No document resources added yet
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-medium mb-4 flex items-center">
+                      <Link className="h-5 w-5 mr-2" />
+                      Link Resources
+                    </h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Title</TableHead>
+                          <TableHead>Level</TableHead>
+                          <TableHead>Topic</TableHead>
+                          <TableHead>URL</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {linkResources.length > 0 ? linkResources.map(resource => (
+                          <TableRow key={resource.id}>
+                            <TableCell>{resource.title}</TableCell>
+                            <TableCell>
+                              <span className="capitalize">{resource.level}</span>
+                            </TableCell>
+                            <TableCell>{resource.topic}</TableCell>
+                            <TableCell>
+                              <a 
+                                href={resource.url} 
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-edu-primary underline"
+                              >
+                                Open Link
+                              </a>
+                            </TableCell>
+                          </TableRow>
+                        )) : (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center">
+                              No link resources added yet
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="notes">
+                <div className="mt-6">
+                  <h3 className="text-lg font-medium mb-4">Subject Notes</h3>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Created</TableHead>
+                        <TableHead>Updated</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {notes.length > 0 ? notes.map(note => (
+                        <TableRow key={note.id}>
+                          <TableCell>{note.title}</TableCell>
+                          <TableCell>{new Date(note.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell>{new Date(note.updatedAt).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => setSelectedNote(note)}
+                            >
+                              View Note
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )) : (
+                        <TableRow>
+                          <TableCell colSpan={4} className="text-center">
+                            No notes added yet
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -420,6 +569,76 @@ const FacultyDashboard = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Note Dialog */}
+      <Dialog open={!!selectedNote} onOpenChange={(open) => !open && setSelectedNote(null)}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          {selectedNote && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedNote.title}</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4">
+                <div className="prose max-w-none">
+                  <Textarea
+                    value={selectedNote.content}
+                    className="w-full min-h-[300px]"
+                    readOnly
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Resource Preview Dialog */}
+      <Dialog open={!!selectedResource} onOpenChange={(open) => !open && setSelectedResource(null)}>
+        <DialogContent className="max-w-4xl">
+          {selectedResource && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedResource.title}</DialogTitle>
+              </DialogHeader>
+              <div className="mt-4">
+                {selectedResource.type === 'video' ? (
+                  <div className="aspect-video">
+                    <iframe 
+                      src={selectedResource.url} 
+                      className="w-full h-full rounded-md" 
+                      title={selectedResource.title}
+                      allowFullScreen
+                    />
+                  </div>
+                ) : selectedResource.type === 'document' ? (
+                  <div className="bg-gray-100 p-4 rounded-md">
+                    <p className="text-sm">{selectedResource.content || "Document content not available for preview."}</p>
+                    <a 
+                      href={selectedResource.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-edu-primary hover:underline mt-2 inline-block"
+                    >
+                      Open Document
+                    </a>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <a 
+                      href={selectedResource.url} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-edu-primary hover:underline text-lg"
+                    >
+                      Open External Resource
+                    </a>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };
