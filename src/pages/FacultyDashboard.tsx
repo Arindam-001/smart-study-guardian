@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +16,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Textarea } from '@/components/ui/textarea';
 
 const FacultyDashboard = () => {
-  const { user, subjects, addResource, updateAttendance } = useAppContext();
+  const { user, subjects, users, addResource, updateAttendance } = useAppContext();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [resourceTitle, setResourceTitle] = useState('');
   const [resourceUrl, setResourceUrl] = useState('');
@@ -29,8 +30,18 @@ const FacultyDashboard = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Effect to set a default subject if none selected
+  useEffect(() => {
+    if (taughtSubjects.length > 0 && !selectedSubject) {
+      setSelectedSubject(taughtSubjects[0].id);
+    }
+  }, [subjects]);
+
   // Get subjects taught by this faculty member
   const taughtSubjects = subjects.filter(s => s.teacherId === user?.id);
+  
+  // Get all students
+  const students = users.filter(u => u.role === 'student');
 
   if (!user || user.role !== 'teacher') {
     return (
@@ -137,13 +148,6 @@ const FacultyDashboard = () => {
     }
   };
 
-  // Mock students for attendance
-  const students = [
-    { id: '1', name: 'Student User', email: 'student@example.com' },
-    { id: '4', name: 'John Doe', email: 'john@example.com' },
-    { id: '5', name: 'Jane Smith', email: 'jane@example.com' }
-  ];
-
   const currentSubject = subjects.find(s => s.id === selectedSubject);
   
   // Separate resources by type
@@ -183,6 +187,13 @@ const FacultyDashboard = () => {
               </SelectContent>
             </Select>
           </div>
+
+          {taughtSubjects.length === 0 && (
+            <div className="text-center py-8">
+              <h3 className="text-lg font-medium text-edu-dark">No subjects assigned</h3>
+              <p className="text-muted-foreground mt-2">You don't have any subjects assigned to you yet.</p>
+            </div>
+          )}
 
           {selectedSubject && (
             <Tabs defaultValue="resources">
@@ -510,7 +521,7 @@ const FacultyDashboard = () => {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {students.map(student => (
+                      {students.length > 0 ? students.map(student => (
                         <TableRow key={student.id}>
                           <TableCell className="font-medium">{student.name}</TableCell>
                           <TableCell>{student.email}</TableCell>
@@ -535,7 +546,13 @@ const FacultyDashboard = () => {
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )) : (
+                        <TableRow>
+                          <TableCell colSpan={3} className="text-center">
+                            No students enrolled
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -552,16 +569,24 @@ const FacultyDashboard = () => {
                       <TableHead>Name</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>ID</TableHead>
+                      <TableHead>Semester</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {students.map(student => (
+                    {students.length > 0 ? students.map(student => (
                       <TableRow key={student.id}>
                         <TableCell className="font-medium">{student.name}</TableCell>
                         <TableCell>{student.email}</TableCell>
                         <TableCell>{student.id}</TableCell>
+                        <TableCell>{student.currentSemester}</TableCell>
                       </TableRow>
-                    ))}
+                    )) : (
+                      <TableRow>
+                        <TableCell colSpan={4} className="text-center">
+                          No students enrolled
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </TabsContent>
