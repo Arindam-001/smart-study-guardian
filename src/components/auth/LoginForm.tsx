@@ -17,7 +17,7 @@ export const LoginForm = () => {
   const navigate = useNavigate();
 
   const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     return emailRegex.test(email);
   };
 
@@ -28,7 +28,7 @@ export const LoginForm = () => {
     if (!validateEmail(email)) {
       toast({
         title: "Invalid email",
-        description: "Please enter a valid email address (e.g., user@gmail.com).",
+        description: "Please enter a valid email address",
         variant: "destructive"
       });
       return;
