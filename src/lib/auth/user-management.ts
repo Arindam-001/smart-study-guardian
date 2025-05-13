@@ -2,6 +2,20 @@
 import { User, UserRole } from '../interfaces/types';
 import { getItem, setItem, STORAGE_KEYS } from '../local-storage';
 
+// Enhanced email validation regex that validates most real-world email formats
+const validateEmail = (email: string): boolean => {
+  // RFC 5322 compliant regex for email validation
+  const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return emailRegex.test(email);
+};
+
+// Phone number validation
+const validatePhone = (phone: string): boolean => {
+  // Allows international format with or without '+' and spaces
+  const phoneRegex = /^(\+?\d{1,3}[-\s]?)?\(?[\d\s]{3,}\)?[-\s]?[\d\s]{3,}$/;
+  return phoneRegex.test(phone);
+};
+
 export const signUp = async (
   name: string,
   email: string,
@@ -12,10 +26,15 @@ export const signUp = async (
   phone?: string
 ): Promise<boolean> => {
   try {
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    // Validate email format with enhanced regex
+    if (!validateEmail(email)) {
       console.error('Invalid email format');
+      return false;
+    }
+
+    // Validate phone if provided
+    if (phone && !validatePhone(phone)) {
+      console.error('Invalid phone format');
       return false;
     }
 
@@ -64,6 +83,11 @@ export const updateUserPhone = async (
   phone: string
 ): Promise<boolean> => {
   try {
+    if (!validatePhone(phone)) {
+      console.error('Invalid phone format');
+      return false;
+    }
+    
     const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
     const userIndex = users.findIndex(u => u.email === email);
     

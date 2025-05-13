@@ -5,9 +5,10 @@ import {
   Assignment, Question, Warning, StudentPerformance 
 } from './interfaces/types';
 import { AppContextType } from './interfaces/context';
-import { getItem, setItem, STORAGE_KEYS } from './local-storage';
+import { getItem, setItem, STORAGE_KEYS, clearAllData } from './local-storage';
 import { getCurrentUser, signIn as authSignIn, signOut as authSignOut } from './auth';
 import { signUp as authSignUp } from './auth/user-management';
+import { clearAllOTPData } from './auth/password-reset';
 
 // Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -31,145 +32,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         setUser(currentUser);
       }
       
-      // Load users
-      const storedUsers = getItem<User[]>(STORAGE_KEYS.USERS, []);
-      if (storedUsers.length === 0) {
-        // Initialize with default users if none exist
-        const defaultUsers: User[] = [
-          {
-            id: '1',
-            name: 'Student User',
-            email: 'student@example.com',
-            role: 'student',
-            currentSemester: 1,
-            accessibleSemesters: [1]
-          },
-          {
-            id: '2',
-            name: 'Teacher User',
-            email: 'teacher@example.com',
-            role: 'teacher',
-            currentSemester: 0,
-            accessibleSemesters: [1, 2, 3, 4, 5, 6, 7, 8]
-          },
-          {
-            id: '3',
-            name: 'Admin User',
-            email: 'admin@example.com',
-            role: 'admin',
-            currentSemester: 0,
-            accessibleSemesters: [1, 2, 3, 4, 5, 6, 7, 8]
-          }
-        ];
-        setUsers(defaultUsers);
-        setItem(STORAGE_KEYS.USERS, defaultUsers);
-      } else {
-        setUsers(storedUsers);
-      }
+      // Load users - starting with empty state for real-world email handling
+      setUsers(getItem<User[]>(STORAGE_KEYS.USERS, []));
       
       // Load subjects
-      const storedSubjects = getItem<Subject[]>(STORAGE_KEYS.SUBJECTS, []);
-      if (storedSubjects.length === 0) {
-        // Initialize with default subjects if none exist
-        const defaultSubjects: Subject[] = [
-          {
-            id: '1',
-            name: 'Introduction to Computer Science',
-            semesterId: 1,
-            teacherId: '2',
-            notes: [
-              {
-                id: '1',
-                title: 'Basics of Programming',
-                content: 'Programming is the process of creating a set of instructions that tell a computer how to perform a task...',
-                createdAt: new Date(),
-                updatedAt: new Date()
-              }
-            ],
-            resources: [
-              {
-                id: 'r1',
-                title: 'Introduction to Python - Beginners',
-                type: 'video',
-                url: 'https://www.youtube.com/watch?v=example1',
-                level: 'beginner',
-                topic: 'programming basics',
-                createdAt: new Date(),
-                subjectId: '1'
-              },
-              {
-                id: 'r2',
-                title: 'Object-Oriented Programming Concepts - Intermediate',
-                type: 'video',
-                url: 'https://www.youtube.com/watch?v=example2',
-                level: 'intermediate',
-                topic: 'oop',
-                createdAt: new Date(),
-                subjectId: '1'
-              },
-              {
-                id: 'r3',
-                title: 'Advanced Data Structures - Expert Level',
-                type: 'document',
-                url: 'https://example.com/advanced-data-structures',
-                level: 'advanced',
-                topic: 'data structures',
-                createdAt: new Date(),
-                subjectId: '1'
-              }
-            ]
-          },
-          {
-            id: '2',
-            name: 'Calculus',
-            semesterId: 1,
-            teacherId: '2',
-            notes: [],
-            resources: [
-              {
-                id: 'r4',
-                title: 'Introduction to Calculus',
-                type: 'video',
-                url: 'https://www.youtube.com/watch?v=example4',
-                level: 'beginner',
-                topic: 'limits',
-                createdAt: new Date(),
-                subjectId: '2'
-              },
-              {
-                id: 'r5',
-                title: 'Intermediate Calculus - Derivatives',
-                type: 'link',
-                url: 'https://example.com/derivatives',
-                level: 'intermediate',
-                topic: 'derivatives',
-                createdAt: new Date(),
-                subjectId: '2'
-              }
-            ]
-          },
-          {
-            id: '3',
-            name: 'Physics I',
-            semesterId: 1,
-            teacherId: '2',
-            notes: [],
-            resources: []
-          },
-          {
-            id: '4',
-            name: 'Data Structures',
-            semesterId: 2,
-            teacherId: '2',
-            notes: [],
-            resources: []
-          }
-        ];
-        setSubjects(defaultSubjects);
-        setItem(STORAGE_KEYS.SUBJECTS, defaultSubjects);
-      } else {
-        setSubjects(storedSubjects);
-      }
+      setSubjects(getItem<Subject[]>(STORAGE_KEYS.SUBJECTS, []));
       
       // Load other data from localStorage
       setWarnings(getItem<Warning[]>(STORAGE_KEYS.WARNINGS, []));
@@ -209,6 +76,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   useEffect(() => {
     setItem(STORAGE_KEYS.SUBMISSIONS, submissions);
   }, [submissions]);
+
+  const clearAllUserData = () => {
+    // Clear all localStorage data
+    clearAllData();
+    
+    // Clear OTP store
+    clearAllOTPData();
+    
+    // Reset all state
+    setUser(null);
+    setUsers([]);
+    setSubjects([]);
+    setWarnings([]);
+    setAssignments([]);
+    setStudentPerformance([]);
+    setSubmissions([]);
+    
+    return true;
+  };
 
   const login = async (email: string, password: string) => {
     try {
@@ -554,7 +440,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     assignments,
     submissions,
     getSubmissionsByAssignment,
-    getSubmissionsByStudent
+    getSubmissionsByStudent,
+    clearAllUserData
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

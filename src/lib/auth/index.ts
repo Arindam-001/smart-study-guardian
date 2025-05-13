@@ -2,7 +2,7 @@
 // Re-export all authentication functions from a single entry point
 import { signIn, signOut, getCurrentUser, setupAuthListener } from './auth-core';
 import { signUp } from './user-management';
-import { requestPasswordReset, resetPassword } from './password-reset';
+import { requestPasswordReset, resetPassword, clearAllOTPData } from './password-reset';
 
 export {
   signIn,
@@ -11,5 +11,6 @@ export {
   setupAuthListener,
   signUp,
   requestPasswordReset,
-  resetPassword
+  resetPassword,
+  clearAllOTPData
 };

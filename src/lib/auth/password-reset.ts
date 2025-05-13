@@ -1,16 +1,28 @@
+
 import { getItem, setItem, STORAGE_KEYS } from '../local-storage';
 import { User } from '../interfaces/types';
 
 // Simulate OTP storage - in a real app, this would be in a secure database
 const otpStore: Record<string, { otp: string, expires: number }> = {};
 
-// Generate a random OTP
+// Generate a 6-digit OTP
 const generateOTP = (): string => {
   return Math.floor(100000 + Math.random() * 900000).toString();
 };
 
+// Validate email format
+const validateEmail = (email: string): boolean => {
+  const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+  return emailRegex.test(email);
+};
+
 export const requestPasswordReset = async (email: string): Promise<boolean> => {
   try {
+    if (!validateEmail(email)) {
+      console.error('Invalid email format');
+      return false;
+    }
+    
     const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
     const userExists = users.some(u => u.email === email);
     
@@ -28,7 +40,8 @@ export const requestPasswordReset = async (email: string): Promise<boolean> => {
       expires: Date.now() + 30 * 60 * 1000 
     };
     
-    // In a real app, this would send an email with the OTP
+    // In a real app, this would send an email with the OTP using a service like SendGrid, AWS SES, etc.
+    // For this demo, we'll log it to the console
     console.log(`Password reset OTP for ${email}: ${otp}`);
     
     // Store the reset request in localStorage (in a real app you'd use a token system)
@@ -102,5 +115,12 @@ export const resetPassword = async (token: string, newPassword: string): Promise
   } catch (error) {
     console.error('Password reset error:', error);
     return false;
+  }
+};
+
+// Clear OTP data for security purposes
+export const clearAllOTPData = (): void => {
+  for (const key in otpStore) {
+    delete otpStore[key];
   }
 };

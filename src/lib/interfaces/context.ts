@@ -26,4 +26,5 @@ export interface AppContextType {
   submissions: AssignmentSubmission[];
   getSubmissionsByAssignment: (assignmentId: string) => AssignmentSubmission[];
   getSubmissionsByStudent: (studentId: string) => AssignmentSubmission[];
+  clearAllUserData: () => boolean;
 }

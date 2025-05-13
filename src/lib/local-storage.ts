@@ -31,6 +31,15 @@ export function removeItem(key: string): void {
   }
 }
 
+// Clear all items in localStorage
+export function clearAllData(): void {
+  try {
+    localStorage.clear();
+  } catch (error) {
+    console.error('Error clearing localStorage:', error);
+  }
+}
+
 // Keys used in localStorage
 export const STORAGE_KEYS = {
   AUTH_USER: 'auth_user',

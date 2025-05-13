@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { requestPasswordReset } from '@/lib/auth-service';
+import { requestPasswordReset, verifyOTP } from '@/lib/auth/index';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
@@ -33,11 +33,16 @@ const ForgotPasswordForm = () => {
     },
   });
 
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return emailRegex.test(email);
+  };
+
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    if (!email.includes('@') || !email.includes('.')) {
+    if (!validateEmail(email)) {
       toast({
         title: "Invalid email format",
         description: "Please enter a valid email address",
@@ -48,14 +53,16 @@ const ForgotPasswordForm = () => {
     }
 
     try {
+      // In a real app, this would send an email with an OTP
       const success = await requestPasswordReset(email);
       
       if (success) {
         setIsOtpSent(true);
         toast({
           title: "OTP sent",
-          description: "Check your email for a password reset OTP",
+          description: "Check your email for a password reset OTP. For demo purposes, check the console log.",
         });
+        console.log("The OTP was sent to the console for demo purposes. In a real application, it would be sent via email.");
       } else {
         toast({
           title: "Failed to send OTP",
@@ -78,24 +85,28 @@ const ForgotPasswordForm = () => {
   const onOtpSubmit = async (values: z.infer<typeof otpSchema>) => {
     try {
       setIsLoading(true);
-      // In a real app, you would verify the OTP with your backend
-      // For this demo, we'll simulate a successful verification
-      console.log("Verifying OTP:", values.otp);
       
-      // Simulate verification delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Verify OTP
+      const isValid = await verifyOTP(email, values.otp);
       
-      // For demo purposes, we'll accept any 6-digit code
-      setIsOtpVerified(true);
-      setResetToken(email); // In a real app, this would be a unique token from your backend
-      
-      toast({
-        title: "OTP verified",
-        description: "You can now reset your password",
-      });
-      
-      // Navigate to reset password page with the token
-      navigate(`/reset-password?token=${encodeURIComponent(email)}`);
+      if (isValid) {
+        setIsOtpVerified(true);
+        setResetToken(email); // In a real app, this would be a unique token from your backend
+        
+        toast({
+          title: "OTP verified",
+          description: "You can now reset your password",
+        });
+        
+        // Navigate to reset password page with the token
+        navigate(`/reset-password?token=${encodeURIComponent(email)}`);
+      } else {
+        toast({
+          title: "Verification failed",
+          description: "Invalid or expired OTP. Please try again.",
+          variant: "destructive"
+        });
+      }
     } catch (error) {
       console.error("OTP verification error:", error);
       toast({
