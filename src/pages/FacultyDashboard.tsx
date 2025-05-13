@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
@@ -404,7 +403,7 @@ const FacultyDashboard = () => {
                   
                   <div>
                     <h3 className="text-lg font-medium mb-4 flex items-center">
-                      <Link className="h-5 w-5 mr-2" />
+                      <LinkIcon className="h-5 w-5 mr-2" />
                       Link Resources
                     </h3>
                     <Table>
