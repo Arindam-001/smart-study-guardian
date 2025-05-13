@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Resource } from '@/lib/interfaces/types';
-import { BookOpen, Video, Link } from 'lucide-react';
+import { BookOpen, Video, Link as LinkIcon } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface RecommendationsCardProps {
@@ -34,7 +34,7 @@ const RecommendationsCard = ({
     switch (type) {
       case 'video': return <Video className="h-4 w-4" />;
       case 'document': return <BookOpen className="h-4 w-4" />;
-      case 'link': return <Link className="h-4 w-4" />;
+      case 'link': return <LinkIcon className="h-4 w-4" />;
       default: return null;
     }
   };
@@ -141,7 +141,7 @@ const RecommendationsCard = ({
                   </div>
                 ) : selectedResource.type === 'document' ? (
                   <div className="bg-gray-100 p-4 rounded-md">
-                    <p className="text-sm">{selectedResource.content || "Document content not available for preview."}</p>
+                    <p className="text-sm">Document content not available for preview.</p>
                     <a 
                       href={selectedResource.url} 
                       target="_blank" 

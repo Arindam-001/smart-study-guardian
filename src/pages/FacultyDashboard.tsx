@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
@@ -9,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, FileUp, Upload, Trash, BookOpen, Video, Play } from 'lucide-react';
+import { Check, X, FileUp, Upload, Trash, BookOpen, Video, Play, Link as LinkIcon } from 'lucide-react';
 import StudentAttendanceView from '@/components/faculty/StudentAttendanceView';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
