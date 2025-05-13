@@ -7,6 +7,7 @@ import {
 import { AppContextType } from './interfaces/context';
 import { getItem, setItem, STORAGE_KEYS } from './local-storage';
 import { getCurrentUser, signIn as authSignIn, signOut as authSignOut } from './auth';
+import { signUp as authSignUp } from './auth/user-management';
 
 // Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -228,24 +229,38 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     setUser(null);
   };
 
-  const registerUser = async (name: string, email: string, password: string, id: string, role: UserRole, currentSemester: number = 1) => {
+  const registerUser = async (
+    name: string, 
+    email: string, 
+    password: string, 
+    id: string, 
+    role: UserRole, 
+    currentSemester: number = 1,
+    phone?: string
+  ) => {
     try {
       // Check if email or ID already exists
       if (users.some(u => u.email === email || u.id === id)) {
         return false;
       }
       
-      const newUser: User = {
-        id,
-        name,
-        email,
-        role,
-        currentSemester: role === 'student' ? currentSemester : 0,
-        accessibleSemesters: role === 'student' ? [currentSemester] : [1, 2, 3, 4, 5, 6, 7, 8],
-      };
+      const success = await authSignUp(name, email, password, id, role, currentSemester, phone);
       
-      setUsers(prev => [...prev, newUser]);
-      return true;
+      if (success) {
+        const newUser: User = {
+          id,
+          name,
+          email,
+          role,
+          phone,
+          currentSemester: role === 'student' ? currentSemester : 0,
+          accessibleSemesters: role === 'student' ? [currentSemester] : [1, 2, 3, 4, 5, 6, 7, 8],
+        };
+        
+        setUsers(prev => [...prev, newUser]);
+      }
+      
+      return success;
     } catch (err) {
       console.error("Registration error:", err);
       return false;

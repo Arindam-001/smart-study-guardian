@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { resetPassword } from '@/lib/auth-service';
+import { resetPassword } from '@/lib/auth/password-reset';
 
 const ResetPasswordForm = () => {
   const [password, setPassword] = useState('');

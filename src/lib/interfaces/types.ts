@@ -10,6 +10,7 @@ export interface User {
   currentSemester: number;
   accessibleSemesters: number[];
   attendance?: Record<string, boolean[]>;
+  phone?: string;  // Added phone field
 }
 
 export interface Subject {

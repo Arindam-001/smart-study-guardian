@@ -16,8 +16,24 @@ export const LoginForm = () => {
   const { login } = useAppContext();
   const navigate = useNavigate();
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate email
+    if (!validateEmail(email)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address (e.g., user@gmail.com).",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -52,7 +68,7 @@ export const LoginForm = () => {
       <CardHeader>
         <CardTitle className="text-2xl text-edu-primary">Student Portal Login</CardTitle>
         <CardDescription>
-          Enter your institution email to log in to your account
+          Enter your email to log in to your account
         </CardDescription>
       </CardHeader>
       <form onSubmit={handleSubmit}>
@@ -61,7 +77,7 @@ export const LoginForm = () => {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              placeholder="your.email@institution.edu"
+              placeholder="your.email@gmail.com"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}

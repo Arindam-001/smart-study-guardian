@@ -8,12 +8,12 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/lib/context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { supabase } from '@/lib/supabase';
 
 export const RegisterForm = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
   const [id, setId] = useState('');
   const [role, setRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [currentSemester, setCurrentSemester] = useState<number>(1);
@@ -22,9 +22,42 @@ export const RegisterForm = () => {
   const { registerUser, semesters } = useAppContext();
   const navigate = useNavigate();
 
+  const validateEmail = (email: string) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validatePhone = (phone: string) => {
+    // Basic validation - allows various formats
+    const phoneRegex = /^\+?[0-9]{10,15}$/;
+    return phoneRegex.test(phone);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
+
+    // Validate email
+    if (!validateEmail(email)) {
+      toast({
+        title: "Invalid email",
+        description: "Please enter a valid email address (e.g., user@gmail.com).",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate phone
+    if (phone && !validatePhone(phone)) {
+      toast({
+        title: "Invalid phone number",
+        description: "Please enter a valid phone number (10-15 digits).",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
 
     if (password.length < 6) {
       toast({
@@ -37,8 +70,8 @@ export const RegisterForm = () => {
     }
 
     try {
-      // Simplified check for existing email to avoid Supabase API call that might fail
-      const success = await registerUser(name, email, password, id, role, currentSemester);
+      // Register with enhanced user data including phone number
+      const success = await registerUser(name, email, password, id, role, currentSemester, phone);
       
       if (success) {
         toast({
@@ -90,12 +123,24 @@ export const RegisterForm = () => {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              placeholder="your.email@institution.edu"
+              placeholder="your.email@gmail.com"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone Number</Label>
+            <Input
+              id="phone"
+              placeholder="+1234567890"
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">For password recovery via OTP</p>
           </div>
           
           <div className="space-y-2">
