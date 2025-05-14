@@ -5,12 +5,15 @@ import { Plus } from 'lucide-react';
 import SubjectsTable from './subjects/SubjectsTable';
 import SubjectFormDialog from './subjects/SubjectFormDialog';
 import { useSubjectManagement } from '@/hooks/useSubjectManagement';
+import { useAppContext } from '@/lib/context';
 
 interface SubjectManagementProps {
   semesterId?: number;
 }
 
 const SubjectManagement: React.FC<SubjectManagementProps> = ({ semesterId }) => {
+  const { subjects, users, addSubject, updateSubjects } = useAppContext();
+  
   const {
     isAddDialogOpen,
     setIsAddDialogOpen,
@@ -30,7 +33,7 @@ const SubjectManagement: React.FC<SubjectManagementProps> = ({ semesterId }) => 
     handleEditSubject,
     handleDeleteSubject,
     openEditDialog
-  } = useSubjectManagement(semesterId);
+  } = useSubjectManagement(subjects, addSubject, updateSubjects, users, semesterId);
 
   return (
     <div className="space-y-4">

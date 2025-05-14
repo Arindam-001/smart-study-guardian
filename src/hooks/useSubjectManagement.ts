@@ -1,11 +1,16 @@
 
 import { useState } from 'react';
-import { useAppContext } from '@/lib/context';
-import { useToast } from '@/components/ui/use-toast';
 import { Subject } from '@/lib/interfaces/types';
+import { useToast } from '@/components/ui/use-toast';
 
-export const useSubjectManagement = (semesterId?: number) => {
-  const { subjects, addSubject, updateSubjects, users } = useAppContext();
+// Create a modified version that doesn't directly depend on AppContext
+export const useSubjectManagement = (
+  subjects: Subject[] = [],
+  addSubject: (subject: Omit<Subject, 'id' | 'notes'>) => Subject = () => ({ id: '', name: '', semesterId: 1, notes: [] }),
+  updateSubjects: (subjects: Subject[]) => void = () => {},
+  users: any[] = [],
+  semesterId?: number
+) => {
   const { toast } = useToast();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
