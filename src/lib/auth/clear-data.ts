@@ -9,5 +9,12 @@ export const clearAllAuthData = (): void => {
   // Clear all OTP data
   clearAllOTPData();
   
+  // Also clear any temporary session storage data
+  try {
+    sessionStorage.removeItem('TEMP_AUTH_USER');
+  } catch (err) {
+    console.error('Error clearing session storage:', err);
+  }
+  
   console.log('All authentication data has been cleared');
 };
