@@ -4,13 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { useAppContext } from '@/lib/context';
+import { useToast } from '@/components/ui/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { validateEmailDomain, getSemesterCountByProgram } from '@/lib/auth-service';
-import { supabase } from '@/lib/supabase';
 import { getItem, setItem, STORAGE_KEYS } from '@/lib/local-storage';
 import { User } from '@/lib/interfaces/types';
+import { signUp } from '@/lib/auth/user-management';
 
 export const RegisterForm = () => {
   const [name, setName] = useState('');
@@ -112,7 +111,29 @@ export const RegisterForm = () => {
     }
 
     try {
-      // Get existing users
+      // First try with the signUp function from user-management
+      const success = await signUp(
+        name,
+        email,
+        password,
+        id,
+        role,
+        currentSemester,
+        phone,
+        role === 'student' ? enrolledCourse : undefined
+      );
+      
+      if (success) {
+        toast({
+          title: "Registration successful",
+          description: "You can now log in with your credentials.",
+        });
+        
+        navigate('/');
+        return;
+      }
+      
+      // As a fallback, directly manipulate local storage
       const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
       
       // Check if user already exists

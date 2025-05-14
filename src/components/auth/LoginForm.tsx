@@ -5,9 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { useAppContext } from '@/lib/context';
-import { getItem, setItem, removeItem, STORAGE_KEYS } from '@/lib/local-storage';
+import { getItem, removeItem, STORAGE_KEYS } from '@/lib/local-storage';
 import { User } from '@/lib/interfaces/types';
 import { signIn } from '@/lib/auth/auth-core';
 
@@ -57,36 +57,43 @@ export const LoginForm = () => {
     setIsLoading(true);
 
     try {
-      // First try to get users from local storage to check if the user exists
-      const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
-      const user = users.find(u => u.email === email);
+      // Call the signIn function with email and password
+      const user = await signIn(email, password);
       
       if (!user) {
         toast({
           title: "Login failed",
-          description: "User not found. Please check your email or register a new account.",
+          description: "Invalid credentials. Please check your email and password.",
           variant: "destructive"
         });
         setIsLoading(false);
         return;
       }
       
-      // If user exists, try to authenticate
-      setItem(STORAGE_KEYS.AUTH_USER, user);
+      // Use the context login function
+      const success = await login(email, password);
       
-      toast({
-        title: "Login successful",
-        description: "Welcome back!",
-      });
-      
-      // Check if there's a pending admin backup
-      const adminBackup = getItem('ADMIN_USER_BACKUP', null);
-      if (adminBackup) {
-        // Clear it if logging in normally
-        removeItem('ADMIN_USER_BACKUP');
+      if (success) {
+        toast({
+          title: "Login successful",
+          description: "Welcome back!",
+        });
+        
+        // Check if there's a pending admin backup
+        const adminBackup = getItem('ADMIN_USER_BACKUP', null);
+        if (adminBackup) {
+          // Clear it if logging in normally
+          removeItem('ADMIN_USER_BACKUP');
+        }
+        
+        navigate('/dashboard');
+      } else {
+        toast({
+          title: "Login failed",
+          description: "An error occurred during login. Please try again.",
+          variant: "destructive"
+        });
       }
-      
-      navigate('/dashboard');
     } catch (error) {
       console.error("Login error:", error);
       toast({

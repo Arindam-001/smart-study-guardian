@@ -1,6 +1,4 @@
 
-// This file implements the core toast functionality
-
 import * as React from "react";
 import { Toast, ToastActionElement, ToastProps } from "@/components/ui/toast";
 

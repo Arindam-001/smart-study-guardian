@@ -1,7 +1,8 @@
-
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { User, UserRole, Subject, Note, Resource, Assignment, Warning, StudentPerformance } from '@/lib/interfaces/types';
 import { AssignmentSubmission } from '@/lib/interfaces/assignment';
+import { signIn } from '@/lib/auth/auth-core';
+import { getItem, setItem, STORAGE_KEYS } from '@/lib/local-storage';
 
 export interface AppContextType {
   user: User | null;
@@ -50,8 +51,12 @@ export const useAppContext = () => {
 // Provider component
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   // State declarations
-  const [user, setUser] = useState<User | null>(null);
-  const [usersList, setUsers] = useState<User[]>([]);
+  const [user, setUser] = useState<User | null>(() => {
+    return getItem<User | null>(STORAGE_KEYS.AUTH_USER, null);
+  });
+  const [usersList, setUsers] = useState<User[]>(() => {
+    return getItem<User[]>(STORAGE_KEYS.USERS, []);
+  });
   const [subjectsList, setSubjects] = useState<Subject[]>([]);
   const [warningsList, setWarnings] = useState<Warning[]>([]);
   const [studentPerformanceList, setStudentPerformance] = useState<StudentPerformance[]>([]);
@@ -88,24 +93,50 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
       enrolledCourse,
     };
 
-    // Add user to list
-    setUsers(prevUsers => [...prevUsers, newUser]);
+    // Add user to list and update state
+    const updatedUsers = [...usersList, newUser];
+    setUsers(updatedUsers);
+    
+    // Store in local storage
+    setItem(STORAGE_KEYS.USERS, updatedUsers);
+    
     return true;
   };
 
-  // Login function
+  // Login function - improved to properly set the user state
   const login = async (email: string, password: string): Promise<boolean> => {
-    const foundUser = usersList.find(u => u.email === email);
-    if (foundUser) {
-      setUser(foundUser);
-      return true;
+    try {
+      // Use the signIn function from auth-core
+      const foundUser = await signIn(email, password);
+      
+      if (foundUser) {
+        setUser(foundUser);
+        setItem(STORAGE_KEYS.AUTH_USER, foundUser);
+        return true;
+      }
+      
+      // If signIn failed, try to find user in local storage as fallback
+      const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
+      const localUser = users.find(u => u.email === email);
+      
+      if (localUser) {
+        setUser(localUser);
+        setItem(STORAGE_KEYS.AUTH_USER, localUser);
+        return true;
+      }
+      
+      return false;
+    } catch (error) {
+      console.error("Login error:", error);
+      return false;
     }
-    return false;
   };
 
   // Logout function
   const logout = async (): Promise<void> => {
     setUser(null);
+    // Remove user from local storage
+    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
   };
 
   // Add subject function
@@ -306,6 +337,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     setStudentPerformance([]);
     setAssignments([]);
     setSubmissions([]);
+    
+    // Clear localStorage
+    localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
+    localStorage.removeItem(STORAGE_KEYS.USERS);
+    
     return true;
   };
 
