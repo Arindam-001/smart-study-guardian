@@ -22,17 +22,30 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/lib/context';
 import { useParams } from 'react-router-dom';
-import { ResourceLevel } from '@/lib/interfaces/types';
+import { ResourceLevel, Resource } from '@/lib/interfaces/types';
 
 interface AddResourceDialogProps {
+  subjectId?: string;
+  noteTopic?: string;
   onClose: () => void;
-  noteTopic: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onResourceAdded?: (resource: Resource) => void;
 }
 
-const AddResourceDialog: React.FC<AddResourceDialogProps> = ({ onClose, noteTopic }) => {
-  const { subjectId } = useParams<{ subjectId: string }>();
+const AddResourceDialog: React.FC<AddResourceDialogProps> = ({ 
+  onClose, 
+  noteTopic = '', 
+  subjectId: propSubjectId,
+  open = true, 
+  onOpenChange,
+  onResourceAdded
+}) => {
+  const { subjectId: urlSubjectId } = useParams<{ subjectId: string }>();
   const { toast } = useToast();
   const { addResource } = useAppContext();
+  
+  const subjectId = propSubjectId || urlSubjectId;
   
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -71,7 +84,6 @@ const AddResourceDialog: React.FC<AddResourceDialogProps> = ({ onClose, noteTopi
         type,
         level,
         topic,
-        // subjectId is handled by the addResource function
       });
 
       toast({
@@ -79,6 +91,10 @@ const AddResourceDialog: React.FC<AddResourceDialogProps> = ({ onClose, noteTopi
         description: "The resource has been added successfully",
       });
 
+      if (onResourceAdded) {
+        onResourceAdded(resource);
+      }
+      
       onClose();
     } catch (error) {
       toast({
@@ -91,8 +107,17 @@ const AddResourceDialog: React.FC<AddResourceDialogProps> = ({ onClose, noteTopi
     }
   };
 
+  const handleDialogChange = (open: boolean) => {
+    if (!open) {
+      onClose();
+    }
+    if (onOpenChange) {
+      onOpenChange(open);
+    }
+  };
+
   return (
-    <Dialog open onOpenChange={() => onClose()}>
+    <Dialog open={open} onOpenChange={handleDialogChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Add Learning Resource</DialogTitle>

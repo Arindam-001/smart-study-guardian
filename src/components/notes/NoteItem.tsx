@@ -9,9 +9,10 @@ import AddResourceDialog from '@/components/resources/AddResourceDialog';
 interface NoteItemProps {
   note: Note;
   isTeacher: boolean;
+  onDelete?: () => void;
 }
 
-const NoteItem: React.FC<NoteItemProps> = ({ note, isTeacher }) => {
+const NoteItem: React.FC<NoteItemProps> = ({ note, isTeacher, onDelete }) => {
   const [showFullContent, setShowFullContent] = useState(false);
   const [showAddResource, setShowAddResource] = useState(false);
 
@@ -36,6 +37,11 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, isTeacher }) => {
               }
             </CardDescription>
           </div>
+          {onDelete && (
+            <Button variant="ghost" size="sm" className="text-red-500 h-8 px-2" onClick={onDelete}>
+              Delete
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
