@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,15 +14,30 @@ import ViewStudentsTab from '@/components/faculty/ViewStudentsTab';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { getItem, setItem } from '@/lib/local-storage';
+
+const FACULTY_STORAGE_KEY = 'FACULTY_DASHBOARD_STATE';
 
 const FacultyDashboard = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const searchParams = new URLSearchParams(location.search);
   const impersonateId = searchParams.get('id');
 
   const { user, subjects, users, updateAttendance } = useAppContext();
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Load state from localStorage or use defaults
+  const savedState = getItem<{
+    selectedSubject: string | null;
+    activeTab: string;
+  }>(FACULTY_STORAGE_KEY, {
+    selectedSubject: null,
+    activeTab: 'resources'
+  });
+  
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(savedState.selectedSubject);
+  const [activeTab, setActiveTab] = useState<string>(savedState.activeTab);
   
   // Get the actual user - either the logged-in user or the impersonated user
   const actualUser = impersonateId && user?.role === 'admin' 
@@ -38,9 +53,26 @@ const FacultyDashboard = () => {
   // Effect to set a default subject if none selected
   useEffect(() => {
     if (taughtSubjects.length > 0 && !selectedSubject) {
-      setSelectedSubject(taughtSubjects[0].id);
+      const defaultSubject = taughtSubjects[0].id;
+      setSelectedSubject(defaultSubject);
+      
+      // Save to localStorage
+      setItem(FACULTY_STORAGE_KEY, {
+        selectedSubject: defaultSubject,
+        activeTab
+      });
     }
-  }, [subjects, taughtSubjects, selectedSubject]);
+  }, [taughtSubjects, selectedSubject, activeTab]);
+  
+  // Save state to localStorage when it changes
+  useEffect(() => {
+    if (selectedSubject) {
+      setItem(FACULTY_STORAGE_KEY, {
+        selectedSubject,
+        activeTab
+      });
+    }
+  }, [selectedSubject, activeTab]);
 
   // Function to handle resource added notification
   const handleResourceAdded = () => {
@@ -56,6 +88,11 @@ const FacultyDashboard = () => {
       title: "Note Added",
       description: "Students can now access this note",
     });
+  };
+  
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
   };
 
   if (!actualUser || (actualUser.role !== 'teacher' && !impersonateId)) {
@@ -101,7 +138,9 @@ const FacultyDashboard = () => {
           <SubjectSelector
             subjects={taughtSubjects}
             selectedSubject={selectedSubject}
-            onSubjectChange={setSelectedSubject}
+            onSubjectChange={(subjectId) => {
+              setSelectedSubject(subjectId);
+            }}
           />
 
           {taughtSubjects.length === 0 && (
@@ -112,7 +151,7 @@ const FacultyDashboard = () => {
           )}
 
           {selectedSubject && (
-            <Tabs defaultValue="resources">
+            <Tabs value={activeTab} onValueChange={handleTabChange}>
               <TabsList className="mb-6">
                 <TabsTrigger value="resources">Manage Resources</TabsTrigger>
                 <TabsTrigger value="notes">Manage Notes</TabsTrigger>

@@ -1,53 +1,40 @@
 
-// Utility functions for working with localStorage
+// Add the new STORAGE_KEYS
+export const STORAGE_KEYS = {
+  AUTH_USER: 'AUTH_USER',
+  USERS: 'USERS',
+  SUBJECTS: 'SUBJECTS',
+  ASSIGNMENTS: 'ASSIGNMENTS',
+  SUBMISSIONS: 'SUBMISSIONS',
+  WARNINGS: 'WARNINGS',
+  PERFORMANCE: 'PERFORMANCE',
+};
 
-// Generic function to get an item from localStorage
+// Get item from localStorage with proper type casting
 export function getItem<T>(key: string, defaultValue: T): T {
   try {
     const item = localStorage.getItem(key);
     return item ? JSON.parse(item) : defaultValue;
   } catch (error) {
-    console.error('Error getting item from localStorage:', error);
+    console.error(`Error getting ${key} from localStorage:`, error);
     return defaultValue;
   }
 }
 
-// Generic function to set an item in localStorage
+// Set item in localStorage with proper serialization
 export function setItem<T>(key: string, value: T): void {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
-    console.error('Error setting item in localStorage:', error);
+    console.error(`Error setting ${key} in localStorage:`, error);
   }
 }
 
-// Remove an item from localStorage
+// Remove item from localStorage
 export function removeItem(key: string): void {
   try {
-    localStorage.setItem(key, '');
     localStorage.removeItem(key);
   } catch (error) {
-    console.error('Error removing item from localStorage:', error);
+    console.error(`Error removing ${key} from localStorage:`, error);
   }
 }
-
-// Clear all items in localStorage
-export function clearAllData(): void {
-  try {
-    localStorage.clear();
-  } catch (error) {
-    console.error('Error clearing localStorage:', error);
-  }
-}
-
-// Keys used in localStorage
-export const STORAGE_KEYS = {
-  AUTH_USER: 'auth_user',
-  USERS: 'users',
-  SUBJECTS: 'subjects',
-  NOTES: 'notes',
-  ASSIGNMENTS: 'assignments',
-  SUBMISSIONS: 'submissions',
-  WARNINGS: 'warnings',
-  STUDENT_PERFORMANCE: 'student_performance',
-};

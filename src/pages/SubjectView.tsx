@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -19,7 +20,9 @@ const SubjectView = () => {
   const { semesterId, subjectId } = useParams<{ semesterId: string, subjectId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
+  
+  // Use URLSearchParams but don't recreate it on every render
+  const [searchParams, setSearchParams] = useState(new URLSearchParams(location.search));
   const tabParam = searchParams.get('tab');
   const assignmentIdParam = searchParams.get('assignmentId');
   
@@ -30,6 +33,11 @@ const SubjectView = () => {
   const [showTakeAssignment, setShowTakeAssignment] = useState(false);
   const [showAssignmentEditor, setShowAssignmentEditor] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(assignmentIdParam);
+  
+  // Update searchParams when location changes
+  useEffect(() => {
+    setSearchParams(new URLSearchParams(location.search));
+  }, [location.search]);
   
   // Effect to handle URL params
   useEffect(() => {
@@ -43,12 +51,14 @@ const SubjectView = () => {
     }
   }, [tabParam, assignmentIdParam]);
   
-  // Update URL when tab changes
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    params.set('tab', activeTab);
+  // Update URL when tab changes - using navigate with replace option to avoid history stack issues
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', value);
+    // Use replace: true to avoid adding to history stack which was causing refresh loops
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
-  }, [activeTab, location.pathname, navigate]);
+  };
 
   if (!user || !subjectId) {
     navigate('/');
@@ -106,7 +116,7 @@ const SubjectView = () => {
   return (
     <DashboardLayout title={subject.name}>
       <div className="mb-6">
-        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="notes" className="flex items-center gap-2">
               <BookOpen size={16} />

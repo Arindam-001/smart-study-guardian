@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, UserRole, Subject, Note, Resource, Assignment, Warning, StudentPerformance } from '@/lib/interfaces/types';
 import { AssignmentSubmission } from '@/lib/interfaces/assignment';
 import { AppContextType } from './app-context-types';
@@ -30,12 +30,47 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   const [usersList, setUsers] = useState<User[]>(() => {
     return getItem<User[]>(STORAGE_KEYS.USERS, []);
   });
-  const [subjectsList, setSubjects] = useState<Subject[]>([]);
-  const [warningsList, setWarnings] = useState<Warning[]>([]);
-  const [studentPerformanceList, setStudentPerformance] = useState<StudentPerformance[]>([]);
-  const [assignmentsList, setAssignments] = useState<Assignment[]>([]);
-  const [submissionsList, setSubmissions] = useState<AssignmentSubmission[]>([]);
+  const [subjectsList, setSubjects] = useState<Subject[]>(() => {
+    return getItem<Subject[]>(STORAGE_KEYS.SUBJECTS, []);
+  });
+  const [warningsList, setWarnings] = useState<Warning[]>(() => {
+    return getItem<Warning[]>(STORAGE_KEYS.WARNINGS, []);
+  });
+  const [studentPerformanceList, setStudentPerformance] = useState<StudentPerformance[]>(() => {
+    return getItem<StudentPerformance[]>(STORAGE_KEYS.PERFORMANCE, []);
+  });
+  const [assignmentsList, setAssignments] = useState<Assignment[]>(() => {
+    return getItem<Assignment[]>(STORAGE_KEYS.ASSIGNMENTS, []);
+  });
+  const [submissionsList, setSubmissions] = useState<AssignmentSubmission[]>(() => {
+    return getItem<AssignmentSubmission[]>(STORAGE_KEYS.SUBMISSIONS, []);
+  });
   const semestersList = [1, 2, 3, 4, 5, 6, 7, 8];
+
+  // Effect to persist data in localStorage whenever it changes
+  useEffect(() => {
+    if (usersList.length > 0) setItem(STORAGE_KEYS.USERS, usersList);
+  }, [usersList]);
+
+  useEffect(() => {
+    if (subjectsList.length > 0) setItem(STORAGE_KEYS.SUBJECTS, subjectsList);
+  }, [subjectsList]);
+
+  useEffect(() => {
+    if (warningsList.length > 0) setItem(STORAGE_KEYS.WARNINGS, warningsList);
+  }, [warningsList]);
+
+  useEffect(() => {
+    if (assignmentsList.length > 0) setItem(STORAGE_KEYS.ASSIGNMENTS, assignmentsList);
+  }, [assignmentsList]);
+
+  useEffect(() => {
+    if (submissionsList.length > 0) setItem(STORAGE_KEYS.SUBMISSIONS, submissionsList);
+  }, [submissionsList]);
+
+  useEffect(() => {
+    if (studentPerformanceList.length > 0) setItem(STORAGE_KEYS.PERFORMANCE, studentPerformanceList);
+  }, [studentPerformanceList]);
 
   // Import functionality from separate modules
   const { login, logout, registerUser } = useAuthFunctions(usersList, setUser, setUsers);
@@ -68,6 +103,11 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     // Clear localStorage
     localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
     localStorage.removeItem(STORAGE_KEYS.USERS);
+    localStorage.removeItem(STORAGE_KEYS.SUBJECTS);
+    localStorage.removeItem(STORAGE_KEYS.ASSIGNMENTS);
+    localStorage.removeItem(STORAGE_KEYS.SUBMISSIONS);
+    localStorage.removeItem(STORAGE_KEYS.WARNINGS);
+    localStorage.removeItem(STORAGE_KEYS.PERFORMANCE);
     
     return true;
   };
