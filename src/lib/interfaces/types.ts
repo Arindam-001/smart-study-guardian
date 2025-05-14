@@ -1,3 +1,4 @@
+
 export type UserRole = 'student' | 'teacher' | 'admin';
 export type ResourceLevel = 'beginner' | 'intermediate' | 'advanced';
 
@@ -10,6 +11,7 @@ export interface User {
   currentSemester: number;
   accessibleSemesters: number[];
   attendance?: Record<string, boolean[]>; // subjectId -> array of attendance (true/false)
+  enrolledCourse?: string; // Added enrolled course field
 }
 
 export interface Subject {

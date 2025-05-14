@@ -86,7 +86,7 @@ const AppRoutes = () => {
       <Route 
         path="/student-dashboard" 
         element={
-          <RoleProtectedRoute allowedRoles={['student']}>
+          <RoleProtectedRoute allowedRoles={['student', 'admin']}>
             <StudentDashboard />
           </RoleProtectedRoute>
         } 
@@ -95,7 +95,7 @@ const AppRoutes = () => {
       <Route 
         path="/faculty-dashboard" 
         element={
-          <RoleProtectedRoute allowedRoles={['teacher']}>
+          <RoleProtectedRoute allowedRoles={['teacher', 'admin']}>
             <FacultyDashboard />
           </RoleProtectedRoute>
         } 
@@ -123,6 +123,35 @@ const AppRoutes = () => {
       <Route 
         path="/notifications" 
         element={<ProtectedRoute><Notifications /></ProtectedRoute>} 
+      />
+      
+      {/* Additional routes for navigation tabs */}
+      <Route 
+        path="/students" 
+        element={
+          <RoleProtectedRoute allowedRoles={['teacher', 'admin']}>
+            <FacultyDashboard />
+          </RoleProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/assignments" 
+        element={<ProtectedRoute><Notifications /></ProtectedRoute>} 
+      />
+      
+      <Route 
+        path="/faculty" 
+        element={
+          <RoleProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </RoleProtectedRoute>
+        } 
+      />
+      
+      <Route 
+        path="/subjects" 
+        element={<ProtectedRoute><SemesterView /></ProtectedRoute>} 
       />
       
       <Route path="*" element={<NotFound />} />

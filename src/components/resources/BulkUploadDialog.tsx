@@ -36,7 +36,9 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ open, onClose, onUp
   const [parsedResources, setParsedResources] = useState<ResourceTemplate[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
+  const [uploadMode, setUploadMode] = useState<'csv' | 'file'>('csv');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const filesInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   
   const resetForm = () => {
@@ -47,12 +49,49 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ open, onClose, onUp
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+    if (filesInputRef.current) {
+      filesInputRef.current.value = '';
+    }
   };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
       setParseError(null);
+    }
+  };
+
+  const handleFilesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const fileList = Array.from(e.target.files);
+      const resources: ResourceTemplate[] = fileList.map(file => {
+        // Generate a URL for the file
+        const fileUrl = URL.createObjectURL(file);
+        
+        // Determine file type
+        let fileType: 'video' | 'document' | 'link' = 'document';
+        if (file.type.startsWith('video/')) {
+          fileType = 'video';
+        } else if (file.type.startsWith('application/') || file.type.startsWith('text/')) {
+          fileType = 'document';
+        }
+        
+        return {
+          title: file.name,
+          url: fileUrl,
+          type: fileType,
+          level: 'beginner',
+          topic: 'General',
+          description: `File: ${file.name} (${(file.size / 1024).toFixed(2)} KB)`
+        };
+      });
+      
+      setParsedResources(resources);
+      
+      toast({
+        title: `${resources.length} files processed`,
+        description: "Files are ready to be uploaded as resources"
+      });
     }
   };
   
@@ -134,7 +173,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ open, onClose, onUp
     if (parsedResources.length === 0) {
       toast({
         title: "No resources to upload",
-        description: "Please upload a valid CSV file with resource data.",
+        description: "Please upload files or a valid CSV file with resource data.",
         variant: "destructive",
       });
       return;
@@ -160,37 +199,71 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ open, onClose, onUp
         <DialogHeader>
           <DialogTitle>Bulk Upload Resources</DialogTitle>
           <DialogDescription>
-            Upload multiple resources at once using a CSV file.
-            <span className="block mt-2 text-xs">
-              Required columns: title, url, type, level, topic
-            </span>
+            Upload multiple resources at once using files or a CSV template.
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 my-4">
-          <div className="space-y-2">
-            <Label htmlFor="csv-file">Upload CSV File</Label>
-            <Input 
-              ref={fileInputRef}
-              id="csv-file" 
-              type="file" 
-              accept=".csv" 
-              onChange={handleFileChange} 
-            />
-            <div className="text-xs text-muted-foreground">
-              File must be a CSV with headers: title, url, type, level, topic
-            </div>
+          <div className="flex space-x-2 mb-4">
+            <Button 
+              variant={uploadMode === 'file' ? "default" : "outline"} 
+              onClick={() => setUploadMode('file')}
+              className="flex-1"
+            >
+              Upload Files
+            </Button>
+            <Button 
+              variant={uploadMode === 'csv' ? "default" : "outline"} 
+              onClick={() => setUploadMode('csv')}
+              className="flex-1"
+            >
+              CSV Template
+            </Button>
           </div>
-          
-          <Button 
-            type="button" 
-            variant="secondary" 
-            onClick={parseCSV}
-            disabled={!file || isProcessing}
-            className="w-full"
-          >
-            {isProcessing ? 'Processing...' : 'Parse CSV File'}
-          </Button>
+
+          {uploadMode === 'file' ? (
+            <div className="space-y-2">
+              <Label htmlFor="files-upload">Upload Files</Label>
+              <Input 
+                ref={filesInputRef}
+                id="files-upload" 
+                type="file" 
+                multiple
+                onChange={handleFilesUpload} 
+                className="cursor-pointer"
+              />
+              <div className="text-xs text-muted-foreground">
+                Select any files you want to upload as resources (documents, videos, etc.)
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="csv-file">Upload CSV File</Label>
+                <Input 
+                  ref={fileInputRef}
+                  id="csv-file" 
+                  type="file" 
+                  accept=".csv" 
+                  onChange={handleFileChange}
+                  className="cursor-pointer"
+                />
+                <div className="text-xs text-muted-foreground">
+                  File must be a CSV with headers: title, url, type, level, topic
+                </div>
+              </div>
+              
+              <Button 
+                type="button" 
+                variant="secondary" 
+                onClick={parseCSV}
+                disabled={!file || isProcessing}
+                className="w-full"
+              >
+                {isProcessing ? 'Processing...' : 'Parse CSV File'}
+              </Button>
+            </>
+          )}
           
           {parseError && (
             <div className="bg-red-50 border border-red-200 rounded-md p-3 text-red-600 flex items-start">
@@ -210,7 +283,6 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ open, onClose, onUp
                     <TableRow>
                       <TableHead className="w-[200px]">Title</TableHead>
                       <TableHead className="w-[100px]">Type</TableHead>
-                      <TableHead className="w-[100px]">Level</TableHead>
                       <TableHead>Topic</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -219,7 +291,6 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({ open, onClose, onUp
                       <TableRow key={index}>
                         <TableCell className="font-medium">{resource.title}</TableCell>
                         <TableCell>{resource.type}</TableCell>
-                        <TableCell>{resource.level}</TableCell>
                         <TableCell>{resource.topic}</TableCell>
                       </TableRow>
                     ))}

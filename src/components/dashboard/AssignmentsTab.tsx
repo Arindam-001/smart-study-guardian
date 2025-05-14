@@ -54,9 +54,15 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                                 Due: {assignment.dueDate.toLocaleDateString()}
                               </div>
                             </div>
-                            <Link to={`/semester/${subject.semesterId}/subject/${subject.id}?tab=assignments&assignmentId=${assignment.id}`}>
-                              <Button variant="outline" size="sm">Take Assignment</Button>
-                            </Link>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              asChild
+                            >
+                              <Link to={`/semester/${subject.semesterId}/subject/${subject.id}?tab=assignments&assignmentId=${assignment.id}`}>
+                                Take Assignment
+                              </Link>
+                            </Button>
                           </div>
                         ))}
                       </div>
@@ -65,9 +71,14 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                         <p className="text-muted-foreground mb-4">
                           No pending assignments for this subject.
                         </p>
-                        <Link to={`/semester/${subject.semesterId}/subject/${subject.id}`}>
-                          <Button variant="outline">View Subject Details</Button>
-                        </Link>
+                        <Button 
+                          variant="outline" 
+                          asChild
+                        >
+                          <Link to={`/semester/${subject.semesterId}/subject/${subject.id}`}>
+                            View Subject Details
+                          </Link>
+                        </Button>
                       </div>
                     )}
                   </div>

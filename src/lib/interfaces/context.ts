@@ -8,7 +8,7 @@ export interface AppContextType {
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   logout: () => Promise<void>;
-  registerUser: (name: string, email: string, password: string, id: string, role: UserRole, currentSemester?: number, phone?: string) => Promise<boolean>;
+  registerUser: (name: string, email: string, password: string, id: string, role: UserRole, currentSemester?: number, phone?: string, enrolledCourse?: string) => Promise<boolean>;
   subjects: Subject[];
   addSubject: (subject: Omit<Subject, 'id' | 'notes'>) => Subject;
   updateSubjects: (subjects: Subject[]) => void;

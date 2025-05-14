@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ export const RegisterForm = () => {
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [id, setId] = useState('');
+  const [enrolledCourse, setEnrolledCourse] = useState('');
   const [role, setRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [currentSemester, setCurrentSemester] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -69,8 +71,28 @@ export const RegisterForm = () => {
     }
 
     try {
-      // Register with enhanced user data including phone number
-      const success = await registerUser(name, email, password, id, role, currentSemester, phone);
+      // Register with enhanced user data including enrolled course
+      const userData = {
+        name,
+        email,
+        password,
+        id,
+        role,
+        currentSemester,
+        phone,
+        enrolledCourse: role === 'student' ? enrolledCourse : undefined
+      };
+      
+      const success = await registerUser(
+        userData.name, 
+        userData.email, 
+        userData.password, 
+        userData.id, 
+        userData.role, 
+        userData.currentSemester, 
+        userData.phone,
+        userData.enrolledCourse
+      );
       
       if (success) {
         toast({
@@ -185,24 +207,36 @@ export const RegisterForm = () => {
           </div>
           
           {role === 'student' && (
-            <div className="space-y-2">
-              <Label htmlFor="semester">Current Semester</Label>
-              <Select 
-                value={currentSemester.toString()} 
-                onValueChange={(value) => setCurrentSemester(parseInt(value, 10))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select semester" />
-                </SelectTrigger>
-                <SelectContent>
-                  {semesters.map(semester => (
-                    <SelectItem key={semester} value={semester.toString()}>
-                      Semester {semester}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="enrolled-course">Enrolled Course</Label>
+                <Input
+                  id="enrolled-course"
+                  placeholder="e.g., Computer Science, Electrical Engineering"
+                  value={enrolledCourse}
+                  onChange={(e) => setEnrolledCourse(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="semester">Current Semester</Label>
+                <Select 
+                  value={currentSemester.toString()} 
+                  onValueChange={(value) => setCurrentSemester(parseInt(value, 10))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select semester" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {semesters.map(semester => (
+                      <SelectItem key={semester} value={semester.toString()}>
+                        Semester {semester}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
           )}
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
