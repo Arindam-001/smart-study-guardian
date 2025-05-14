@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import NoteItem from '@/components/notes/NoteItem';
 import AddNoteForm from '@/components/notes/AddNoteForm';
@@ -13,18 +13,44 @@ import { Badge } from '@/components/ui/badge';
 import { BookOpen, File, Shield, AlertTriangle, Link as LinkIcon, Video, FileText } from 'lucide-react';
 import SubmissionsView from '@/components/faculty/SubmissionsView';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Resource } from '@/lib/interfaces/types';
+import { Assignment, Resource } from '@/lib/interfaces/types';
+import AssignmentEditor from '@/components/assignment/AssignmentEditor';
 
 const SubjectView = () => {
   const { semesterId, subjectId } = useParams<{ semesterId: string, subjectId: string }>();
   const navigate = useNavigate();
-  const { user, subjects, warnings, assignments } = useAppContext();
-  const [activeTab, setActiveTab] = useState<string>('notes');
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const tabParam = searchParams.get('tab');
+  const assignmentIdParam = searchParams.get('assignmentId');
+  
+  const { user, subjects, warnings, assignments, deleteNote, deleteResource } = useAppContext();
+  const [activeTab, setActiveTab] = useState<string>(tabParam || 'notes');
   const [showAddNote, setShowAddNote] = useState(false);
   const [showCreateAssignment, setShowCreateAssignment] = useState(false);
   const [showTakeAssignment, setShowTakeAssignment] = useState(false);
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
+  const [showAssignmentEditor, setShowAssignmentEditor] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(assignmentIdParam);
   
+  // Effect to handle URL params
+  useEffect(() => {
+    if (tabParam) {
+      setActiveTab(tabParam);
+    }
+    
+    if (assignmentIdParam) {
+      setSelectedAssignmentId(assignmentIdParam);
+      setShowTakeAssignment(true);
+    }
+  }, [tabParam, assignmentIdParam]);
+  
+  // Update URL when tab changes
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    params.set('tab', activeTab);
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+  }, [activeTab]);
+
   if (!user || !subjectId) {
     navigate('/');
     return null;
@@ -51,6 +77,9 @@ const SubjectView = () => {
 
   // Get subject assignments
   const subjectAssignments = assignments.filter(a => a.subjectId === subject.id);
+  const selectedAssignment = assignmentIdParam ? 
+    subjectAssignments.find(a => a.id === assignmentIdParam) : 
+    subjectAssignments[0];
 
   // Check if there are warnings for this subject
   const hasWarnings = warnings.some(w => w.assignmentId.startsWith(subjectId));
@@ -61,10 +90,24 @@ const SubjectView = () => {
   const documentResources = subject.resources?.filter(r => r.type === 'document') || [];
   const linkResources = subject.resources?.filter(r => r.type === 'link') || [];
 
+  // Handle note deletion
+  const handleDeleteNote = (noteId: string) => {
+    if (confirm('Are you sure you want to delete this note?')) {
+      deleteNote(subject.id, noteId);
+    }
+  };
+  
+  // Handle resource deletion
+  const handleDeleteResource = (resourceId: string) => {
+    if (confirm('Are you sure you want to delete this resource?')) {
+      deleteResource(subject.id, resourceId);
+    }
+  };
+
   return (
     <DashboardLayout title={subject.name}>
       <div className="mb-6">
-        <Tabs defaultValue="notes" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="notes" className="flex items-center gap-2">
               <BookOpen size={16} />
@@ -110,7 +153,12 @@ const SubjectView = () => {
               ) : (
                 <div className="space-y-4">
                   {subject.notes.map(note => (
-                    <NoteItem key={note.id} note={note} isTeacher={isTeacherOrAdmin} />
+                    <NoteItem 
+                      key={note.id} 
+                      note={note} 
+                      isTeacher={isTeacherOrAdmin}
+                      onDelete={isTeacherOrAdmin ? () => handleDeleteNote(note.id) : undefined}
+                    />
                   ))}
                 </div>
               )}
@@ -145,6 +193,7 @@ const SubjectView = () => {
                             key={resource.id} 
                             resource={resource} 
                             type="video"
+                            onDelete={isTeacherOrAdmin ? () => handleDeleteResource(resource.id) : undefined}
                           />
                         ))}
                       </div>
@@ -164,6 +213,7 @@ const SubjectView = () => {
                             key={resource.id} 
                             resource={resource} 
                             type="document"
+                            onDelete={isTeacherOrAdmin ? () => handleDeleteResource(resource.id) : undefined}
                           />
                         ))}
                       </div>
@@ -183,6 +233,7 @@ const SubjectView = () => {
                             key={resource.id} 
                             resource={resource} 
                             type="link"
+                            onDelete={isTeacherOrAdmin ? () => handleDeleteResource(resource.id) : undefined}
                           />
                         ))}
                       </div>
@@ -195,7 +246,7 @@ const SubjectView = () => {
           
           <TabsContent value="assignments">
             <div className="mb-6">
-              {isTeacherOrAdmin && !showCreateAssignment && !showTakeAssignment && (
+              {isTeacherOrAdmin && !showCreateAssignment && !showTakeAssignment && !showAssignmentEditor && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <Button 
                     onClick={() => setShowCreateAssignment(true)} 
@@ -220,7 +271,10 @@ const SubjectView = () => {
               
               {!isTeacherOrAdmin && !showTakeAssignment && subjectAssignments.length > 0 && (
                 <Button 
-                  onClick={() => setShowTakeAssignment(true)} 
+                  onClick={() => {
+                    setShowTakeAssignment(true);
+                    setSelectedAssignmentId(subjectAssignments[0].id);
+                  }}
                   className="bg-edu-primary mb-4 h-auto py-6 flex flex-col items-center gap-2 w-full"
                 >
                   <File size={24} />
@@ -238,27 +292,24 @@ const SubjectView = () => {
                 />
               )}
               
-              {showTakeAssignment && (
+              {showTakeAssignment && selectedAssignment && (
                 <TakeAssignment 
-                  assignment={{
-                    id: 'sample',
-                    subjectId: subject.id,
-                    title: 'Sample Assignment',
-                    questions: Array(20).fill(null).map((_, i) => ({
-                      id: `q-${i}`,
-                      text: `Sample question ${i + 1} about ${subject.name}?`,
-                      type: 'text',
-                      topic: ['programming basics', 'data structures', 'algorithms', 'oop'][i % 4]
-                    })),
-                    dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-                    createdAt: new Date()
+                  assignment={selectedAssignment}
+                  onComplete={() => {
+                    setShowTakeAssignment(false);
+                    setSelectedAssignmentId(null);
                   }}
-                  onComplete={() => setShowTakeAssignment(false)}
+                />
+              )}
+              
+              {showAssignmentEditor && (
+                <AssignmentEditor
+                  onClose={() => setShowAssignmentEditor(false)}
                 />
               )}
               
               {/* Subject Assignments List */}
-              {!showCreateAssignment && !showTakeAssignment && (
+              {!showCreateAssignment && !showTakeAssignment && !showAssignmentEditor && (
                 <>
                   {subjectAssignments.length > 0 ? (
                     <div className="space-y-6">
@@ -276,23 +327,26 @@ const SubjectView = () => {
                                   Due: {assignment.dueDate.toLocaleString()}
                                 </div>
                                 <div className="text-sm">
-                                  {assignment.questions.length} questions • {assignment.duration} minutes
+                                  {assignment.questions.length} questions • {assignment.duration || 30} minutes
                                 </div>
                               </div>
                               <div className="flex flex-col gap-2">
                                 {isTeacherOrAdmin ? (
-                                  <Button 
-                                    size="sm" 
-                                    onClick={() => {
-                                      setSelectedAssignmentId(assignment.id);
-                                    }}
-                                  >
-                                    View Submissions
-                                  </Button>
+                                  <>
+                                    <Button 
+                                      size="sm" 
+                                      onClick={() => {
+                                        setSelectedAssignmentId(assignment.id);
+                                      }}
+                                    >
+                                      View Submissions
+                                    </Button>
+                                  </>
                                 ) : (
                                   <Button 
                                     size="sm" 
                                     onClick={() => {
+                                      setSelectedAssignmentId(assignment.id);
                                       setShowTakeAssignment(true);
                                     }}
                                   >
@@ -335,9 +389,10 @@ const SubjectView = () => {
 interface ResourceCardProps {
   resource: Resource;
   type: 'video' | 'document' | 'link';
+  onDelete?: () => void;
 }
 
-const ResourceCard: React.FC<ResourceCardProps> = ({ resource, type }) => {
+const ResourceCard: React.FC<ResourceCardProps> = ({ resource, type, onDelete }) => {
   const getLevelColor = (level: string) => {
     switch (level) {
       case 'beginner':
@@ -379,7 +434,7 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, type }) => {
             <span className="font-medium mr-2">Topic:</span> {resource.topic}
           </div>
           
-          <div className="mt-2">
+          <div className="mt-2 flex justify-between items-center">
             <a
               href={resource.url}
               target="_blank"
@@ -389,6 +444,17 @@ const ResourceCard: React.FC<ResourceCardProps> = ({ resource, type }) => {
               {getTypeIcon()}
               <span className="ml-1">Access Resource</span>
             </a>
+            
+            {onDelete && (
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-red-500 hover:text-red-700" 
+                onClick={onDelete}
+              >
+                Remove
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>

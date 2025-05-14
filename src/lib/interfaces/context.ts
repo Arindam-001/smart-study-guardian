@@ -13,7 +13,9 @@ export interface AppContextType {
   addSubject: (subject: Omit<Subject, 'id' | 'notes'>) => Subject;
   updateSubjects: (subjects: Subject[]) => void;
   addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  deleteNote: (subjectId: string, noteId: string) => void;
   addResource: (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => Resource;
+  deleteResource: (subjectId: string, resourceId: string) => void;
   createAssignment: (subjectId: string, title: string, dueDate?: Date, duration?: number, selectedNotes?: Note[]) => Assignment;
   submitAssignment: (assignmentId: string, studentId: string, answers: Record<string, string>, fileUrl?: string) => any;
   addWarning: (studentId: string, assignmentId: string, reason: string) => void;

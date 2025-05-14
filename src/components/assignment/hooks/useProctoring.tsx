@@ -41,6 +41,7 @@ export const useProctoring = (assignmentId: string) => {
           variant: "destructive"
         });
       } else {
+        setTabSwitchCount(prev => prev + 1);
         // For students, show a warning toast
         if (user.role === 'student') {
           toast({
@@ -100,11 +101,7 @@ export const useProctoring = (assignmentId: string) => {
     // Monitor tab switching
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        setTabSwitchCount(prev => {
-          const newCount = prev + 1;
-          createWarning("Tab switching detected");
-          return newCount;
-        });
+        createWarning("Tab switching detected");
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -146,7 +143,7 @@ export const useProctoring = (assignmentId: string) => {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
-  }, [assignmentId, tabSwitchCount]);
+  }, [assignmentId]);
 
   return {
     videoRef,
