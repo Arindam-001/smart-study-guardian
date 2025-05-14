@@ -3,9 +3,13 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ShieldAlert } from 'lucide-react';
 import { getItem, setItem, removeItem, STORAGE_KEYS } from '@/lib/local-storage';
+import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 const ReturnToAdminPanel = () => {
   const adminUser = getItem('ADMIN_USER_BACKUP', null);
+  const { toast } = useToast();
+  const navigate = useNavigate();
   
   if (!adminUser) {
     return null;
@@ -16,8 +20,14 @@ const ReturnToAdminPanel = () => {
     setItem(STORAGE_KEYS.AUTH_USER, adminUser);
     // Clear the backup
     removeItem('ADMIN_USER_BACKUP');
+    
+    toast({
+      title: "Admin mode restored",
+      description: "You have returned to your admin account",
+    });
+    
     // Navigate back to admin dashboard
-    window.location.href = '/admin-dashboard';
+    navigate('/admin-dashboard');
   };
   
   return (

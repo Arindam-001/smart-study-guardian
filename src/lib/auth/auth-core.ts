@@ -165,3 +165,29 @@ export const setupAuthListener = (callback: (user: User | null) => void): (() =>
     if (unsubscribe) unsubscribe();
   };
 };
+
+// Add a function to handle admin impersonation
+export const impersonateUser = (userId: string, currentAdminUser: User | null): User | null => {
+  try {
+    // Save the current admin user for later restoration
+    if (currentAdminUser && currentAdminUser.role === 'admin') {
+      setItem('ADMIN_USER_BACKUP', currentAdminUser);
+    }
+    
+    // Find the user to impersonate
+    const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
+    const userToImpersonate = users.find(u => u.id === userId);
+    
+    if (!userToImpersonate) {
+      console.error('User to impersonate not found');
+      return null;
+    }
+    
+    // Set the impersonated user as current
+    setItem(STORAGE_KEYS.AUTH_USER, userToImpersonate);
+    return userToImpersonate;
+  } catch (error) {
+    console.error('Impersonation error:', error);
+    return null;
+  }
+};

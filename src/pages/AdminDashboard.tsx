@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
@@ -15,6 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogT
 import { supabase } from '@/lib/supabase';
 import { deleteUser } from '@/lib/auth/user-management';
 import { getItem, setItem, STORAGE_KEYS } from '@/lib/local-storage';
+import { impersonateUser } from '@/lib/auth/auth-core';
 
 const AdminDashboard = () => {
   const { 
@@ -26,6 +26,7 @@ const AdminDashboard = () => {
     grantSemesterAccess,
     clearAllUserData,
   } = useAppContext();
+  
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null);
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
@@ -85,31 +86,27 @@ const AdminDashboard = () => {
   const studentUsers = users.filter(u => u.role === 'student');
   const facultyUsers = users.filter(u => u.role === 'teacher');
 
-  // Improved admin view functionality to properly view as another user
+  // Improved admin view functionality to properly impersonate another user
   const goToUserDashboard = (userId: string, role: string) => {
-    // Find the user to view
-    const userToView = users.find(u => u.id === userId);
-    if (!userToView) {
+    // Use our new impersonation function
+    const impersonated = impersonateUser(userId, user);
+    
+    if (impersonated) {
       toast({
-        title: "User not found",
-        description: "Could not find the selected user",
+        title: "View mode activated",
+        description: `You are now viewing as ${impersonated.name}`,
+      });
+      
+      // Navigate to the appropriate dashboard
+      const dashboardPath = role === 'student' ? '/student-dashboard' : '/faculty-dashboard';
+      window.location.href = dashboardPath;
+    } else {
+      toast({
+        title: "View failed",
+        description: "Could not view as the selected user",
         variant: "destructive"
       });
-      return;
     }
-    
-    // Store the current admin user for returning later
-    const adminUser = getItem(STORAGE_KEYS.AUTH_USER, null);
-    if (adminUser) {
-      setItem('ADMIN_USER_BACKUP', adminUser);
-    }
-    
-    // Set the viewed user as the current authenticated user
-    setItem(STORAGE_KEYS.AUTH_USER, userToView);
-    
-    // Navigate to the appropriate dashboard
-    const dashboardPath = role === 'student' ? '/student-dashboard' : '/faculty-dashboard';
-    window.location.href = dashboardPath;
   };
 
   return (

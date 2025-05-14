@@ -17,6 +17,8 @@ import NotFound from "./pages/NotFound";
 import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
+import ReturnToAdminPanel from "./components/layout/ReturnToAdminPanel";
+import { getItem } from "./lib/local-storage";
 
 const queryClient = new QueryClient();
 
@@ -31,7 +33,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   return children;
 };
 
-// Role-protected route wrapper component
+// Role-protected route wrapper component - modified to allow admins to access all routes
 const RoleProtectedRoute = ({ 
   children, 
   allowedRoles,
@@ -47,8 +49,12 @@ const RoleProtectedRoute = ({
     return <Navigate to="/" replace />;
   }
   
+  // Check for admin backup - if present, this means an admin is impersonating a user
+  const adminBackup = getItem('ADMIN_USER_BACKUP', null);
+  const isAdminImpersonating = !!adminBackup;
+  
   // Admin bypass - admins can access any route
-  if (adminBypass && user && user.role === 'admin') {
+  if ((adminBypass && user && user.role === 'admin') || isAdminImpersonating) {
     return children;
   }
   
@@ -57,6 +63,18 @@ const RoleProtectedRoute = ({
   }
   
   return children;
+};
+
+// AdminImpersonationWrapper - Shows ReturnToAdminPanel when admin is impersonating
+const AdminImpersonationWrapper = ({ children }: { children: React.ReactNode }) => {
+  const adminBackup = getItem('ADMIN_USER_BACKUP', null);
+  
+  return (
+    <>
+      {children}
+      {adminBackup && <ReturnToAdminPanel />}
+    </>
+  );
 };
 
 const AppRoutes = () => {
@@ -79,90 +97,92 @@ const AppRoutes = () => {
   };
 
   return (
-    <Routes>
-      <Route path="/" element={<Index />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      
-      <Route 
-        path="/dashboard" 
-        element={<ProtectedRoute>{getDashboardRedirect()}</ProtectedRoute>} 
-      />
-      
-      <Route 
-        path="/student-dashboard" 
-        element={
-          <RoleProtectedRoute allowedRoles={['student']}>
-            <StudentDashboard />
-          </RoleProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/faculty-dashboard" 
-        element={
-          <RoleProtectedRoute allowedRoles={['teacher']}>
-            <FacultyDashboard />
-          </RoleProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/admin-dashboard" 
-        element={
-          <RoleProtectedRoute allowedRoles={['admin']} adminBypass={false}>
-            <AdminDashboard />
-          </RoleProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/semester/:semesterId" 
-        element={<ProtectedRoute><SemesterView /></ProtectedRoute>} 
-      />
-      
-      <Route 
-        path="/semester/:semesterId/subject/:subjectId" 
-        element={<ProtectedRoute><SubjectView /></ProtectedRoute>} 
-      />
-      
-      <Route 
-        path="/notifications" 
-        element={<ProtectedRoute><Notifications /></ProtectedRoute>} 
-      />
-      
-      {/* Additional routes for navigation tabs - now accessible by admins */}
-      <Route 
-        path="/students" 
-        element={
-          <RoleProtectedRoute allowedRoles={['teacher']}>
-            <FacultyDashboard />
-          </RoleProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/assignments" 
-        element={<ProtectedRoute><Notifications /></ProtectedRoute>} 
-      />
-      
-      <Route 
-        path="/faculty" 
-        element={
-          <RoleProtectedRoute allowedRoles={['admin']}>
-            <AdminDashboard />
-          </RoleProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/subjects" 
-        element={<ProtectedRoute><SemesterView /></ProtectedRoute>} 
-      />
-      
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <AdminImpersonationWrapper>
+      <Routes>
+        <Route path="/" element={<Index />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        
+        <Route 
+          path="/dashboard" 
+          element={<ProtectedRoute>{getDashboardRedirect()}</ProtectedRoute>} 
+        />
+        
+        <Route 
+          path="/student-dashboard" 
+          element={
+            <RoleProtectedRoute allowedRoles={['student']}>
+              <StudentDashboard />
+            </RoleProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/faculty-dashboard" 
+          element={
+            <RoleProtectedRoute allowedRoles={['teacher']}>
+              <FacultyDashboard />
+            </RoleProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/admin-dashboard" 
+          element={
+            <RoleProtectedRoute allowedRoles={['admin']} adminBypass={false}>
+              <AdminDashboard />
+            </RoleProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/semester/:semesterId" 
+          element={<ProtectedRoute><SemesterView /></ProtectedRoute>} 
+        />
+        
+        <Route 
+          path="/semester/:semesterId/subject/:subjectId" 
+          element={<ProtectedRoute><SubjectView /></ProtectedRoute>} 
+        />
+        
+        <Route 
+          path="/notifications" 
+          element={<ProtectedRoute><Notifications /></ProtectedRoute>} 
+        />
+        
+        {/* Additional routes for navigation tabs - now accessible by admins */}
+        <Route 
+          path="/students" 
+          element={
+            <RoleProtectedRoute allowedRoles={['teacher']}>
+              <FacultyDashboard />
+            </RoleProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/assignments" 
+          element={<ProtectedRoute><Notifications /></ProtectedRoute>} 
+        />
+        
+        <Route 
+          path="/faculty" 
+          element={
+            <RoleProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboard />
+            </RoleProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/subjects" 
+          element={<ProtectedRoute><SemesterView /></ProtectedRoute>} 
+        />
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AdminImpersonationWrapper>
   );
 };
 
