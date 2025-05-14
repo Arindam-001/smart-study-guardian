@@ -1,72 +1,72 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User } from '@/lib/interfaces/types';
 import { useAppContext } from '@/lib/context';
-import { Calendar } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Check, X } from 'lucide-react';
 
 interface AttendanceCardProps {
   studentId: string;
   subjectId: string;
+  subjectName?: string;
 }
 
-const AttendanceCard = ({ studentId, subjectId }: AttendanceCardProps) => {
-  const { user, subjects } = useAppContext();
+const AttendanceCard: React.FC<AttendanceCardProps> = ({ studentId, subjectId, subjectName }) => {
+  const { users, subjects } = useAppContext();
   
-  const subject = subjects.find(s => s.id === subjectId);
-  const attendance = user?.attendance?.[subjectId] || [];
+  // Get the student user
+  const student = users.find(u => u.id === studentId);
   
-  const presentDays = attendance.filter(a => a).length;
+  // Get subject name if not provided
+  const subject = subjectName ? { name: subjectName } : subjects.find(s => s.id === subjectId);
+  
+  if (!student || !subject) return null;
+  
+  // Get attendance for this subject
+  const attendance = student.attendance?.[subjectId] || [];
+  
+  // Calculate attendance percentage
   const totalDays = attendance.length;
-  const attendancePercentage = totalDays > 0 
-    ? Math.round((presentDays / totalDays) * 100) 
-    : 0;
+  const presentDays = attendance.filter(present => present).length;
+  const attendancePercentage = totalDays > 0 ? Math.round((presentDays / totalDays) * 100) : 0;
   
   return (
-    <Card className="mb-4">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-medium">Attendance</CardTitle>
-        <Calendar className="h-5 w-5 text-edu-primary" />
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-lg flex justify-between items-center">
+          <span>{subject.name}</span>
+          <span 
+            className={`text-sm px-2 py-1 rounded ${
+              attendancePercentage >= 75 ? 'bg-green-100 text-green-800' : 
+              attendancePercentage >= 60 ? 'bg-yellow-100 text-yellow-800' : 
+              'bg-red-100 text-red-800'
+            }`}
+          >
+            {attendancePercentage}% Present
+          </span>
+        </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          <div>
-            <h4 className="text-sm font-medium mb-1">{subject?.name || 'Subject'}</h4>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Present: {presentDays} / {totalDays} days</span>
-              <span className="text-sm font-medium">
-                {attendancePercentage}%
-              </span>
-            </div>
-            
-            <div className="mt-2 h-2 w-full bg-gray-200 rounded-full">
+        {totalDays === 0 ? (
+          <p className="text-muted-foreground text-center py-4">No attendance data available yet</p>
+        ) : (
+          <div className="grid grid-cols-7 gap-2">
+            {attendance.map((present, index) => (
               <div 
-                className={`h-2 rounded-full ${
-                  attendancePercentage >= 75 ? 'bg-green-500' : 
-                  attendancePercentage >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                key={index} 
+                className={`flex flex-col items-center justify-center p-2 rounded ${
+                  present ? 'bg-green-100' : 'bg-red-100'
                 }`}
-                style={{ width: `${attendancePercentage}%` }}
-              ></div>
-            </div>
+              >
+                <span className="text-xs text-gray-500">Day {index + 1}</span>
+                {present ? (
+                  <Check className="h-4 w-4 text-green-600 mt-1" />
+                ) : (
+                  <X className="h-4 w-4 text-red-600 mt-1" />
+                )}
+              </div>
+            ))}
           </div>
-          
-          <div className="grid grid-cols-7 gap-1">
-            {Array.from({ length: 30 }).map((_, i) => {
-              const dayStatus = attendance[i];
-              return (
-                <div 
-                  key={i}
-                  className={`h-6 w-6 flex items-center justify-center rounded-full text-xs ${
-                    dayStatus === undefined ? 'bg-gray-100' :
-                    dayStatus ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                  }`}
-                >
-                  {i + 1}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

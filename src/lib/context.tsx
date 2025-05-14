@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { AssignmentSubmission } from './interfaces/assignment';
 import { 
@@ -160,6 +161,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       notes: []
     };
     setSubjects(prev => [...prev, newSubject]);
+  };
+
+  const updateSubjects = (updatedSubjects: Subject[]) => {
+    setSubjects(updatedSubjects);
   };
 
   const addNote = (subjectId: string, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -366,43 +371,42 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   };
 
   const grantSemesterAccess = (studentId: string, semesterId: number) => {
-    if (user?.role === 'admin' && user?.id !== studentId) {
-      setUser(prev => {
-        if (prev && prev.id === studentId && !prev.accessibleSemesters.includes(semesterId)) {
-          return {
-            ...prev,
-            accessibleSemesters: [...prev.accessibleSemesters, semesterId].sort((a, b) => a - b)
-          };
-        }
-        return prev;
-      });
-    }
+    setUsers(prev => prev.map(u => {
+      if (u.id === studentId && !u.accessibleSemesters.includes(semesterId)) {
+        return {
+          ...u,
+          accessibleSemesters: [...u.accessibleSemesters, semesterId].sort((a, b) => a - b)
+        };
+      }
+      return u;
+    }));
   };
 
   const updateAttendance = (studentId: string, subjectId: string, date: string, present: boolean) => {
-    setUser(prev => {
-      if (prev && prev.id === studentId) {
-        const attendance = prev.attendance || {};
+    setUsers(prev => prev.map(u => {
+      if (u.id === studentId) {
+        const attendance = u.attendance || {};
         const subjectAttendance = attendance[subjectId] || [];
         const dateIndex = parseInt(date.split('-')[2]) - 1; // Convert date to index
         
         // Ensure array is long enough
-        while (subjectAttendance.length <= dateIndex) {
-          subjectAttendance.push(false);
+        const newSubjectAttendance = [...subjectAttendance];
+        while (newSubjectAttendance.length <= dateIndex) {
+          newSubjectAttendance.push(false);
         }
         
-        subjectAttendance[dateIndex] = present;
+        newSubjectAttendance[dateIndex] = present;
         
         return {
-          ...prev,
+          ...u,
           attendance: {
             ...attendance,
-            [subjectId]: subjectAttendance
+            [subjectId]: newSubjectAttendance
           }
         };
       }
-      return prev;
-    });
+      return u;
+    }));
   };
   
   const getStudentPerformance = (studentId: string) => {
@@ -426,6 +430,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     registerUser,
     subjects,
     addSubject,
+    updateSubjects,
     addNote,
     addResource,
     createAssignment,

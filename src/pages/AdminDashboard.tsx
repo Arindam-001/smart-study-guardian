@@ -9,13 +9,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { Check, X, UserCheck, BookOpen, AlertTriangle, ShieldAlert, User, Users } from 'lucide-react';
 
 const AdminDashboard = () => {
   const { user, users, subjects, warnings, semesters, grantSemesterAccess } = useAppContext();
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const [selectedTeacher, setSelectedTeacher] = useState<string | null>(null);
   const { toast } = useToast();
   
   if (!user || user.role !== 'admin') {
@@ -48,6 +50,53 @@ const AdminDashboard = () => {
     toast({
       title: "Access Granted",
       description: `Student has been granted access to Semester ${selectedSemester}`
+    });
+  };
+
+  const handleAssignTeacher = () => {
+    if (!selectedSubject || !selectedTeacher) {
+      toast({
+        title: "Error",
+        description: "Please select both a subject and a teacher",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Find the subject and update its teacherId
+    const updatedSubjects = subjects.map(subject => {
+      if (subject.id === selectedSubject) {
+        return { ...subject, teacherId: selectedTeacher };
+      }
+      return subject;
+    });
+
+    // Update the subjects in the context
+    const { updateSubjects } = useAppContext();
+    updateSubjects(updatedSubjects);
+    
+    toast({
+      title: "Teacher Assigned",
+      description: `Teacher has been assigned to the selected subject`
+    });
+  };
+
+  const handleUnassignTeacher = (subjectId: string) => {
+    // Find the subject and update its teacherId to empty string
+    const updatedSubjects = subjects.map(subject => {
+      if (subject.id === subjectId) {
+        return { ...subject, teacherId: "" };
+      }
+      return subject;
+    });
+
+    // Update the subjects in the context
+    const { updateSubjects } = useAppContext();
+    updateSubjects(updatedSubjects);
+    
+    toast({
+      title: "Teacher Unassigned",
+      description: `Teacher has been unassigned from the subject`
     });
   };
 
@@ -148,7 +197,59 @@ const AdminDashboard = () => {
                 </TabsContent>
                 
                 <TabsContent value="subjects">
-                  <div className="space-y-4">
+                  <div className="space-y-6">
+                    <div className="border p-4 rounded-md">
+                      <h3 className="text-lg font-medium mb-4">Assign Teacher to Subject</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="subject-select">Select Subject</Label>
+                          <Select 
+                            value={selectedSubject || ''} 
+                            onValueChange={setSelectedSubject}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a subject" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {subjects.map(subject => (
+                                <SelectItem key={subject.id} value={subject.id}>
+                                  {subject.name} (Semester {subject.semesterId})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <Label htmlFor="teacher-select">Select Teacher</Label>
+                          <Select 
+                            value={selectedTeacher || ''} 
+                            onValueChange={setSelectedTeacher}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a teacher" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {facultyUsers.map(teacher => (
+                                <SelectItem key={teacher.id} value={teacher.id}>
+                                  {teacher.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="flex items-end">
+                          <Button 
+                            onClick={handleAssignTeacher} 
+                            className="w-full"
+                          >
+                            Assign Teacher
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    
                     <Table>
                       <TableHeader>
                         <TableRow>
@@ -157,6 +258,7 @@ const AdminDashboard = () => {
                           <TableHead>Semester</TableHead>
                           <TableHead>Teacher</TableHead>
                           <TableHead>Resources</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -169,6 +271,17 @@ const AdminDashboard = () => {
                               {users.find(u => u.id === subject.teacherId)?.name || 'Unassigned'}
                             </TableCell>
                             <TableCell>{subject.resources?.length || 0} resources</TableCell>
+                            <TableCell>
+                              {subject.teacherId && (
+                                <Button 
+                                  variant="destructive" 
+                                  size="sm"
+                                  onClick={() => handleUnassignTeacher(subject.id)}
+                                >
+                                  Unassign
+                                </Button>
+                              )}
+                            </TableCell>
                           </TableRow>
                         ))}
                       </TableBody>

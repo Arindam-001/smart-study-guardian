@@ -11,6 +11,7 @@ export interface AppContextType {
   registerUser: (name: string, email: string, password: string, id: string, role: UserRole, currentSemester?: number, phone?: string) => Promise<boolean>;
   subjects: Subject[];
   addSubject: (subject: Omit<Subject, 'id' | 'notes'>) => void;
+  updateSubjects: (subjects: Subject[]) => void;
   addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
   addResource: (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => void;
   createAssignment: (subjectId: string, title: string) => Assignment;
