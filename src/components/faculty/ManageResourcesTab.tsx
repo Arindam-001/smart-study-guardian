@@ -127,6 +127,7 @@ const ManageResourcesTab: React.FC<ManageResourcesTabProps> = ({
         onOpenChange={setIsAddDialogOpen}
         onResourceAdded={handleResourceAdded}
         subjectId={selectedSubject}
+        onClose={() => setIsAddDialogOpen(false)}
       />
       
       <BulkUploadDialog

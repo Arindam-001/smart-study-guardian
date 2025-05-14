@@ -196,6 +196,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   };
 
+  const deleteNote = (subjectId: string, noteId: string) => {
+    setSubjects(prev => prev.map(subject => {
+      if (subject.id === subjectId) {
+        return {
+          ...subject,
+          notes: subject.notes.filter(note => note.id !== noteId)
+        };
+      }
+      return subject;
+    }));
+  };
+
   const addResource = (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => {
     const newResource: Resource = {
       ...resource,
@@ -214,6 +226,18 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
 
     return newResource;
+  };
+
+  const deleteResource = (subjectId: string, resourceId: string) => {
+    setSubjects(prev => prev.map(subject => {
+      if (subject.id === subjectId) {
+        return {
+          ...subject,
+          resources: (subject.resources || []).filter(resource => resource.id !== resourceId)
+        };
+      }
+      return subject;
+    }));
   };
 
   const createAssignment = (
@@ -531,7 +555,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     addSubject,
     updateSubjects,
     addNote,
+    deleteNote,
     addResource,
+    deleteResource,
     createAssignment,
     submitAssignment,
     addWarning,
