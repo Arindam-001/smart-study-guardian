@@ -386,7 +386,7 @@ const ManageResourcesTab: React.FC<ManageResourcesTabProps> = ({ selectedSubject
                   </div>
                 ) : selectedResource.type === 'document' ? (
                   <div className="bg-gray-100 p-4 rounded-md">
-                    <p className="text-sm">{selectedResource.content || "Document content not available for preview."}</p>
+                    <p className="text-sm">{selectedResource.description || "Document content not available for preview."}</p>
                     <a 
                       href={selectedResource.url} 
                       target="_blank" 
