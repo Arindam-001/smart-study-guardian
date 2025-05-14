@@ -2,7 +2,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Assignment } from '@/lib/interfaces/types';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Eye, Calendar, FileText } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { format } from 'date-fns';
 
 interface AssignmentListProps {
   assignments: Assignment[];
@@ -34,51 +36,62 @@ const AssignmentList: React.FC<AssignmentListProps> = ({
 
   return (
     <div className="space-y-6">
-      <h3 className="text-lg font-medium">Assignments</h3>
+      <h3 className="text-lg font-medium">Assignments ({assignments.length})</h3>
       <div className="grid grid-cols-1 gap-4">
         {assignments.map(assignment => (
-          <div 
+          <Card 
             key={assignment.id}
-            className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+            className="overflow-hidden hover:shadow-md transition-shadow"
           >
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
-              <div>
-                <h4 className="font-medium">{assignment.title}</h4>
-                <div className="text-sm text-muted-foreground">
-                  Due: {assignment.dueDate.toLocaleString()}
+            <CardContent className="p-4">
+              <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <FileText className="text-primary h-5 w-5" />
+                    <h4 className="font-medium text-lg">{assignment.title}</h4>
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    <span>Due: {format(new Date(assignment.dueDate), 'PPP')}</span>
+                  </div>
+                  <div className="text-sm mt-1">
+                    {assignment.questions.length} questions • {assignment.duration || 30} minutes
+                  </div>
                 </div>
-                <div className="text-sm">
-                  {assignment.questions.length} questions • {assignment.duration || 30} minutes
-                </div>
-              </div>
-              <div className="flex flex-col gap-2">
-                {isTeacherOrAdmin ? (
-                  <div className="flex gap-2">
+                <div className="flex gap-2 self-end md:self-center">
+                  {isTeacherOrAdmin ? (
+                    <>
+                      <Button 
+                        size="sm"
+                        variant="outline"
+                        onClick={() => onViewSubmissions(assignment.id)}
+                        className="flex items-center gap-1"
+                      >
+                        <Eye size={16} />
+                        <span>Submissions</span>
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => onDeleteAssignment(assignment.id)}
+                        className="flex items-center gap-1"
+                      >
+                        <Trash2 size={16} />
+                        <span>Delete</span>
+                      </Button>
+                    </>
+                  ) : (
                     <Button 
                       size="sm" 
-                      onClick={() => onViewSubmissions(assignment.id)}
+                      onClick={() => onTakeAssignment(assignment.id)}
                     >
-                      View Submissions
+                      Take Assignment
                     </Button>
-                    <Button 
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => onDeleteAssignment(assignment.id)}
-                    >
-                      <Trash2 size={16} />
-                    </Button>
-                  </div>
-                ) : (
-                  <Button 
-                    size="sm" 
-                    onClick={() => onTakeAssignment(assignment.id)}
-                  >
-                    Take Assignment
-                  </Button>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

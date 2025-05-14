@@ -5,9 +5,10 @@ import ManageResourcesTab from '@/components/faculty/ManageResourcesTab';
 import ManageNotesTab from '@/components/faculty/ManageNotesTab';
 import ManageAttendanceTab from '@/components/faculty/ManageAttendanceTab';
 import ViewStudentsTab from '@/components/faculty/ViewStudentsTab';
-import { User, Note } from '@/lib/interfaces/types';
+import { User, Note, Assignment } from '@/lib/interfaces/types';
 import StudentAttendanceView from '@/components/faculty/StudentAttendanceView';
 import QuickAssignmentGenerator from '@/components/faculty/QuickAssignmentGenerator';
+import ManageAssignmentsTab from '@/components/faculty/ManageAssignmentsTab';
 
 interface FacultyDashboardTabsProps {
   activeTab: string;
@@ -69,7 +70,10 @@ const FacultyDashboardTabs: React.FC<FacultyDashboardTabsProps> = ({
             onAssignmentCreated={onAssignmentAdded}
           />
         </div>
-        <StudentAttendanceView subjectId={selectedSubject} />
+        <ManageAssignmentsTab 
+          subjectId={selectedSubject}
+          onAssignmentAdded={onAssignmentAdded}
+        />
       </TabsContent>
 
       <TabsContent value="attendance">
