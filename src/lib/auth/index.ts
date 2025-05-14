@@ -1,8 +1,9 @@
 
 // Re-export all authentication functions from a single entry point
-import { signIn, signOut, getCurrentUser, setupAuthListener } from './auth-core';
+import { signIn, signOut, getCurrentUser, setupAuthListener, impersonateUser } from './auth-core';
 import { signUp } from './user-management';
 import { requestPasswordReset, resetPassword, clearAllOTPData, verifyOTP } from './password-reset';
+import { clearAllAuthData } from './clear-data';
 
 export {
   signIn,
@@ -13,5 +14,7 @@ export {
   requestPasswordReset,
   resetPassword,
   clearAllOTPData,
-  verifyOTP  // Add the missing export
+  verifyOTP,
+  impersonateUser, // Export the impersonateUser function
+  clearAllAuthData
 };

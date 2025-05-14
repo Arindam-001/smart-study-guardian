@@ -18,22 +18,46 @@ import Register from "./pages/Register";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import ReturnToAdminPanel from "./components/layout/ReturnToAdminPanel";
-import { getItem } from "./lib/local-storage";
+import { getItem, STORAGE_KEYS } from "./lib/local-storage";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
-// Protected route wrapper component
+// Protected route wrapper component with enhanced security
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { isAuthenticated } = useAppContext();
+  const [isChecking, setIsChecking] = useState(true);
+  
+  useEffect(() => {
+    // Double-check authentication to ensure it's not stale
+    const verifyAuth = async () => {
+      const authUser = getItem(STORAGE_KEYS.AUTH_USER, null);
+      setIsChecking(false);
+      
+      // If no authUser found in localStorage, we're definitely not authenticated
+      if (!authUser) {
+        // Clean up any admin backup to prevent post-logout impersonation
+        localStorage.removeItem('ADMIN_USER_BACKUP');
+      }
+    };
+    
+    verifyAuth();
+  }, []);
+  
+  if (isChecking) {
+    return <div className="flex items-center justify-center h-screen">Verifying authentication...</div>;
+  }
   
   if (!isAuthenticated) {
+    // Also clean up admin backup when redirecting due to not being authenticated
+    localStorage.removeItem('ADMIN_USER_BACKUP');
     return <Navigate to="/" replace />;
   }
   
   return children;
 };
 
-// Role-protected route wrapper component - modified to allow admins to access all routes
+// Role-protected route wrapper component - modified to ensure proper authentication for admins
 const RoleProtectedRoute = ({ 
   children, 
   allowedRoles,
@@ -44,8 +68,37 @@ const RoleProtectedRoute = ({
   adminBypass?: boolean;
 }) => {
   const { isAuthenticated, user } = useAppContext();
+  const [isChecking, setIsChecking] = useState(true);
+  
+  useEffect(() => {
+    // Enhanced verification to ensure authentication is valid
+    const verifyAuthAndRole = async () => {
+      const authUser = getItem(STORAGE_KEYS.AUTH_USER, null);
+      const adminBackup = getItem('ADMIN_USER_BACKUP', null);
+      
+      // If no auth user, clean up admin backup to prevent unauthorized access
+      if (!authUser) {
+        localStorage.removeItem('ADMIN_USER_BACKUP');
+      }
+      
+      // If admin backup exists but no auth user, something is wrong - clean up
+      if (adminBackup && !authUser) {
+        localStorage.removeItem('ADMIN_USER_BACKUP');
+      }
+      
+      setIsChecking(false);
+    };
+    
+    verifyAuthAndRole();
+  }, []);
+  
+  if (isChecking) {
+    return <div className="flex items-center justify-center h-screen">Verifying authorization...</div>;
+  }
   
   if (!isAuthenticated) {
+    // Clean up and redirect
+    localStorage.removeItem('ADMIN_USER_BACKUP');
     return <Navigate to="/" replace />;
   }
   
@@ -53,7 +106,7 @@ const RoleProtectedRoute = ({
   const adminBackup = getItem('ADMIN_USER_BACKUP', null);
   const isAdminImpersonating = !!adminBackup;
   
-  // Admin bypass - admins can access any route
+  // Admin bypass - admins can access any route if they have proper credentials
   if ((adminBypass && user && user.role === 'admin') || isAdminImpersonating) {
     return children;
   }
@@ -67,7 +120,13 @@ const RoleProtectedRoute = ({
 
 // AdminImpersonationWrapper - Shows ReturnToAdminPanel when admin is impersonating
 const AdminImpersonationWrapper = ({ children }: { children: React.ReactNode }) => {
+  const { isAuthenticated } = useAppContext();
   const adminBackup = getItem('ADMIN_USER_BACKUP', null);
+  
+  // Only show return panel if both authenticated and admin backup exists
+  if (!isAuthenticated) {
+    return <>{children}</>;
+  }
   
   return (
     <>
@@ -78,11 +137,11 @@ const AdminImpersonationWrapper = ({ children }: { children: React.ReactNode }) 
 };
 
 const AppRoutes = () => {
-  const { user } = useAppContext();
+  const { user, isAuthenticated } = useAppContext();
   
   // Redirect based on user role
   const getDashboardRedirect = () => {
-    if (!user) return <Navigate to="/" />;
+    if (!user || !isAuthenticated) return <Navigate to="/" />;
     
     switch (user.role) {
       case 'student':

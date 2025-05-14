@@ -5,13 +5,16 @@ import { ArrowLeft, ShieldAlert } from 'lucide-react';
 import { getItem, setItem, removeItem, STORAGE_KEYS } from '@/lib/local-storage';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
+import { useAppContext } from '@/lib/context';
 
 const ReturnToAdminPanel = () => {
   const adminUser = getItem('ADMIN_USER_BACKUP', null);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isAuthenticated } = useAppContext();
   
-  if (!adminUser) {
+  // Don't show the panel if not authenticated or no admin backup
+  if (!adminUser || !isAuthenticated) {
     return null;
   }
   

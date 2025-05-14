@@ -7,8 +7,9 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/lib/context';
-import { getItem, STORAGE_KEYS } from '@/lib/local-storage';
+import { getItem, setItem, removeItem, STORAGE_KEYS } from '@/lib/local-storage';
 import { User } from '@/lib/interfaces/types';
+import { signIn } from '@/lib/auth/auth-core';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -18,8 +19,17 @@ export const LoginForm = () => {
   const { login } = useAppContext();
   const navigate = useNavigate();
 
-  // Check for existing users on component mount
+  // Clear any existing impersonation data on component mount
   useEffect(() => {
+    const currentUser = getItem<User | null>(STORAGE_KEYS.AUTH_USER, null);
+    const adminBackup = getItem('ADMIN_USER_BACKUP', null);
+    
+    // If there's no current user but there is an admin backup, something is wrong
+    // Clean up the admin backup to prevent unauthorized access
+    if (!currentUser && adminBackup) {
+      removeItem('ADMIN_USER_BACKUP');
+    }
+    
     const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
     if (users.length > 0) {
       console.log(`Found ${users.length} registered users in storage`);
@@ -47,8 +57,10 @@ export const LoginForm = () => {
     setIsLoading(true);
 
     try {
-      const success = await login(email, password);
-      if (success) {
+      // Use the auth-core signIn function for better authentication handling
+      const user = await signIn(email, password);
+      
+      if (user) {
         toast({
           title: "Login successful",
           description: "Welcome back!",
@@ -58,7 +70,7 @@ export const LoginForm = () => {
         const adminBackup = getItem('ADMIN_USER_BACKUP', null);
         if (adminBackup) {
           // Clear it if logging in normally
-          localStorage.removeItem('ADMIN_USER_BACKUP');
+          removeItem('ADMIN_USER_BACKUP');
         }
         
         navigate('/dashboard');

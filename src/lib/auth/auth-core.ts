@@ -166,13 +166,17 @@ export const setupAuthListener = (callback: (user: User | null) => void): (() =>
   };
 };
 
-// Add a function to handle admin impersonation
+// Updated impersonateUser function to verify current admin is authenticated
 export const impersonateUser = (userId: string, currentAdminUser: User | null): User | null => {
   try {
-    // Save the current admin user for later restoration
-    if (currentAdminUser && currentAdminUser.role === 'admin') {
-      setItem('ADMIN_USER_BACKUP', currentAdminUser);
+    // Ensure the admin is actually logged in and has admin role
+    if (!currentAdminUser || currentAdminUser.role !== 'admin') {
+      console.error('Not authorized to impersonate: No admin user found');
+      return null;
     }
+    
+    // Save the current admin user for later restoration
+    setItem('ADMIN_USER_BACKUP', currentAdminUser);
     
     // Find the user to impersonate
     const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
@@ -180,6 +184,7 @@ export const impersonateUser = (userId: string, currentAdminUser: User | null): 
     
     if (!userToImpersonate) {
       console.error('User to impersonate not found');
+      removeItem('ADMIN_USER_BACKUP'); // Clean up if failed
       return null;
     }
     
