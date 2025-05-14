@@ -43,7 +43,6 @@ const ManageResourcesTab: React.FC<ManageResourcesTabProps> = ({
     onResourceAdded();
   };
   
-  // Fixed: Changed parameter type to match expected string type for resourceId
   const handleDeleteResource = (resourceId: string) => {
     if (window.confirm('Are you sure you want to delete this resource?')) {
       deleteResource(selectedSubject, resourceId);
