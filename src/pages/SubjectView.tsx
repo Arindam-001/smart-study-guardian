@@ -17,8 +17,9 @@ const SubjectView = () => {
   const location = useLocation();
   
   // Get tab and assignmentId from URL without recreating URLSearchParams on every render
-  const tabParam = new URLSearchParams(location.search).get('tab');
-  const assignmentIdParam = new URLSearchParams(location.search).get('assignmentId');
+  const searchParams = new URLSearchParams(location.search);
+  const tabParam = searchParams.get('tab');
+  const assignmentIdParam = searchParams.get('assignmentId');
   
   const { user, subjects, warnings } = useAppContext();
   const [activeTab, setActiveTab] = useState<string>(tabParam || 'notes');
@@ -68,12 +69,12 @@ const SubjectView = () => {
   }
 
   // Check if there are warnings for this subject
-  const hasWarnings = warnings.some(w => w.assignmentId.startsWith(subjectId));
+  const hasWarnings = warnings.some(w => w.assignmentId && w.assignmentId.startsWith(subjectId));
   
   return (
     <DashboardLayout title={subject.name}>
       <div className="mb-6">
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="notes" className="flex items-center gap-2">
               <BookOpen size={16} />
