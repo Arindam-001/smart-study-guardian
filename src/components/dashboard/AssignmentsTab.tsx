@@ -20,7 +20,10 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   
   // Safe navigation to subject page with assignment tab pre-selected
   const navigateToAssignment = useCallback((subjectId: string, semesterId: number, assignmentId: string) => {
-    navigate(`/semester/${semesterId}/subject/${subjectId}?tab=assignments&assignmentId=${assignmentId}`, { replace: true });
+    // Use state to help prevent full page refresh during tab changes
+    navigate(`/semester/${semesterId}/subject/${subjectId}?tab=assignments&assignmentId=${assignmentId}`, { 
+      state: { tabChange: true } 
+    });
   }, [navigate]);
 
   return (

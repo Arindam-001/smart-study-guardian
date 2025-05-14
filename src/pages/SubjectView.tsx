@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -22,83 +21,103 @@ const SubjectView = () => {
   const assignmentIdParam = searchParams.get('assignmentId');
   
   const { user, subjects, warnings } = useAppContext();
-  const [activeTab, setActiveTab] = useState<string>(tabParam || 'notes');
+  
+  // Initialize activeTab state with URL parameter or default to 'notes'
+  const initialTab = tabParam && ['notes', 'resources', 'assignments'].includes(tabParam) ? tabParam : 'notes';
+  const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [showTakeAssignment, setShowTakeAssignment] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(assignmentIdParam);
-
-  // Update URL when tab changes without causing a full page refresh
+  
+  // Update URL without triggering a full page reload
   const updateUrlParams = useCallback((tab: string, assignmentId?: string | null) => {
-    const params = new URLSearchParams();
+    // Start with current params to preserve any other query params
+    const params = new URLSearchParams(location.search);
     
-    if (tab) params.set('tab', tab);
-    if (assignmentId) params.set('assignmentId', assignmentId);
+    // Update the params we care about
+    if (tab) {
+      params.set('tab', tab);
+    } else {
+      params.delete('tab');
+    }
     
-    // Use replace: true to avoid adding entries to the browser history
-    navigate(`/semester/${semesterId}/subject/${subjectId}?${params.toString()}`, { 
-      replace: true,
-      state: { preserveTab: true } // Add state to indicate this is an internal navigation
-    });
-  }, [navigate, semesterId, subjectId]);
-
-  // Handle tab change without causing a page refresh
-  const handleTabChange = (value: string) => {
-    // Only update if the value is actually different
-    if (value !== activeTab) {
-      setActiveTab(value);
-      
-      if (value === 'assignments' && selectedAssignmentId) {
-        updateUrlParams(value, selectedAssignmentId);
-      } else {
-        updateUrlParams(value);
+    if (assignmentId) {
+      params.set('assignmentId', assignmentId);
+    } else if (params.has('assignmentId') && !assignmentId) {
+      params.delete('assignmentId');
+    }
+    
+    // Use replace to avoid adding browser history entries
+    navigate(
+      `${location.pathname}?${params.toString()}`,
+      { 
+        replace: true,
+        state: { tabChange: true } // Mark this as an intentional tab change
       }
+    );
+  }, [navigate, location]);
+  
+  // Handle tab change without causing full page reload
+  const handleTabChange = (value: string) => {
+    console.log(`Tab change requested to: ${value}`);
+    setActiveTab(value);
+    
+    // Update URL with appropriate parameters
+    if (value === 'assignments' && selectedAssignmentId) {
+      updateUrlParams(value, selectedAssignmentId);
+    } else {
+      updateUrlParams(value);
     }
   };
-
-  // Sync URL params with state when URL changes
+  
+  // Keep tab state in sync with URL params
   useEffect(() => {
-    const validTabs = ['notes', 'resources', 'assignments'];
-    const newTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'notes';
+    // Only process if not from internal navigation
+    const isFromNavigation = location.state && (location.state as any).tabChange;
     
-    // Only update state if it's different to avoid re-renders
-    if (activeTab !== newTab) {
-      setActiveTab(newTab);
-    }
-
-    // Handle assignment ID parameter
-    if (assignmentIdParam) {
-      setSelectedAssignmentId(assignmentIdParam);
-      if (tabParam === 'assignments') {
-        setShowTakeAssignment(true);
+    if (!isFromNavigation) {
+      const validTabs = ['notes', 'resources', 'assignments'];
+      const newTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'notes';
+      
+      console.log(`URL param tab: ${tabParam}, Setting tab to: ${newTab}`);
+      
+      // Only update if different to avoid re-renders
+      if (activeTab !== newTab) {
+        setActiveTab(newTab);
+      }
+      
+      // Handle assignment ID parameter
+      if (assignmentIdParam) {
+        setSelectedAssignmentId(assignmentIdParam);
+        if (newTab === 'assignments') {
+          setShowTakeAssignment(true);
+        }
       }
     }
-  }, [tabParam, assignmentIdParam]);
-
+  }, [tabParam, assignmentIdParam, location.state]);
+  
   // Early return conditions
   if (!user || !subjectId) {
     navigate('/');
     return null;
   }
-
+  
   const subject = subjects.find(s => s.id === subjectId);
   
   if (!subject) {
     return <SubjectNotFound semesterId={semesterId} />;
   }
-
+  
   const hasWarnings = warnings.some(w => w.assignmentId && w.assignmentId.startsWith(subjectId));
-
-  // Ensure activeTab is always a valid value
-  const currentTab = ['notes', 'resources', 'assignments'].includes(activeTab) ? activeTab : 'notes';
-
-  console.log('Rendering SubjectView with tab:', currentTab);
-
+  
+  console.log(`Rendering SubjectView with activeTab: ${activeTab}`);
+  
   return (
     <DashboardLayout title={subject.name}>
       <div className="mb-6">
         <Tabs 
-          defaultValue={currentTab} 
+          value={activeTab} 
+          defaultValue={activeTab} 
           onValueChange={handleTabChange}
-          value={currentTab}
         >
           <TabsList>
             <TabsTrigger value="notes" className="flex items-center gap-2">
