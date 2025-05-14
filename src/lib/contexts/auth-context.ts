@@ -47,7 +47,7 @@ export const useAuthFunctions = (
 
   // Register user function - Updated to match the type definition in app-context-types.ts
   const registerUser = async (
-    userData: Omit<User, 'id'> | {
+    userData: Omit<User, "id"> | {
       name: string;
       email: string;
       password: string;
@@ -59,12 +59,19 @@ export const useAuthFunctions = (
     }
   ): Promise<boolean> => {
     // Handle both object formats
+    // Check if we have the second format with an id property
+    const hasIdProperty = 'id' in userData;
+    
+    // Extract common properties
     const { 
-      name, email, id, role, currentSemester = 1, phone, enrolledCourse 
+      name, email, role, currentSemester = 1, phone, enrolledCourse 
     } = userData;
     
+    // Extract id if it exists, otherwise generate a new one
+    const id = hasIdProperty ? (userData as { id: string }).id : `user-${Date.now()}`;
+    
     // Password might be included in the object but not in the User type
-    const password = 'password' in userData ? userData.password : '';
+    const password = 'password' in userData ? (userData as { password: string }).password : '';
     
     // Check if user with same email already exists
     const existingUser = usersList.find(u => u.email === email || u.id === id);
