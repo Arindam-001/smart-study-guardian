@@ -3,6 +3,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { File } from 'lucide-react';
 import { Assignment } from '@/lib/interfaces/types';
+import { useToast } from '@/components/ui/use-toast';
 
 interface StudentAssignmentCtaProps {
   assignments: Assignment[];
@@ -10,14 +11,26 @@ interface StudentAssignmentCtaProps {
 }
 
 const StudentAssignmentCta: React.FC<StudentAssignmentCtaProps> = ({ 
-  assignments, 
-  onTakeAssignment 
+  assignments
 }) => {
+  const { toast } = useToast();
+  
   if (assignments.length === 0) return null;
+  
+  const handleOpenAssignment = () => {
+    const assignment = assignments[0];
+    // Open the assignment in a new tab
+    window.open(`/semester/1/subject/${assignment.subjectId}?tab=assignments&assignmentId=${assignment.id}&mode=take`, '_blank');
+    
+    toast({
+      title: "Assignment opened",
+      description: "Continue your assignment in the new tab."
+    });
+  };
   
   return (
     <Button 
-      onClick={() => onTakeAssignment(assignments[0].id)}
+      onClick={handleOpenAssignment}
       className="bg-edu-primary mb-4 h-auto py-6 flex flex-col items-center gap-2 w-full"
     >
       <File size={24} />

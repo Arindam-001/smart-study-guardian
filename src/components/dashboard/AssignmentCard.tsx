@@ -4,22 +4,33 @@ import { FileText, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Assignment } from '@/lib/interfaces/types';
 import { format } from 'date-fns';
+import { useToast } from '@/components/ui/use-toast';
 
 interface AssignmentCardProps {
   assignment: Assignment;
-  navigateToAssignment: (subjectId: string, semesterId: number, assignmentId: string) => void;
   subjectId: string;
   semesterId: number;
 }
 
 const AssignmentCard: React.FC<AssignmentCardProps> = ({
   assignment,
-  navigateToAssignment,
   subjectId,
   semesterId
 }) => {
+  const { toast } = useToast();
+  
   // Format the due date nicely
   const formattedDueDate = format(assignment.dueDate, "PPP 'at' p");
+  
+  const handleOpenAssignment = () => {
+    // Open the assignment in a new tab
+    window.open(`/semester/${semesterId}/subject/${subjectId}?tab=assignments&assignmentId=${assignment.id}&mode=take`, '_blank');
+    
+    toast({
+      title: "Assignment opened",
+      description: "Continue your assignment in the new tab."
+    });
+  };
   
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center p-4 border rounded-lg hover:bg-slate-50 transition-colors">
@@ -38,7 +49,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({
       </div>
       <Button 
         className="bg-edu-primary" 
-        onClick={() => navigateToAssignment(subjectId, semesterId, assignment.id)}
+        onClick={handleOpenAssignment}
       >
         Take Assignment
       </Button>

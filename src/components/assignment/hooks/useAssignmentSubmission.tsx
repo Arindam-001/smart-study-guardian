@@ -58,6 +58,17 @@ export const useAssignmentSubmission = ({
         
         console.log(`Answers saved as text file for ${user.name} (${user.id}):\n${answersText}`);
         
+        // Include student name and ID in the submission
+        const submissionWithUserDetails = {
+          assignmentId: assignment.id,
+          studentId: user.id,
+          studentName: user.name,
+          answers: answers,
+          fileUrl: mockFileUrl
+        };
+        
+        console.log("Submitting assignment with student details:", submissionWithUserDetails);
+        
         // Use NLP to analyze answers and provide recommendations (simulated)
         console.log("Performing NLP analysis on student answers...");
         
@@ -76,6 +87,13 @@ export const useAssignmentSubmission = ({
         });
         
         setSubmitted(true);
+        
+        // Notify that the assignment was submitted to teacher
+        toast({
+          title: "Assignment Sent to Teacher",
+          description: `Your assignment has been sent to your teacher for review.`,
+          variant: "default"
+        });
       } catch (error) {
         toast({
           title: "Error",

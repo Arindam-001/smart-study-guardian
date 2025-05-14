@@ -19,6 +19,7 @@ interface AssignmentsTabProps {
   selectedAssignmentId: string | null;
   setSelectedAssignmentId: (id: string | null) => void;
   updateUrlParams: (tab: string, assignmentId?: string | null) => void;
+  onCompleteTakeAssignment?: () => void; // New prop
 }
 
 const AssignmentsTab: React.FC<AssignmentsTabProps> = ({ 
@@ -27,7 +28,8 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   setShowTakeAssignment,
   selectedAssignmentId,
   setSelectedAssignmentId,
-  updateUrlParams
+  updateUrlParams,
+  onCompleteTakeAssignment
 }) => {
   const { toast } = useToast();
   const { user, assignments, warnings, deleteAssignment } = useAppContext();
@@ -93,6 +95,20 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
     setSelectedAssignmentId(assignmentId);
     updateUrlParams('assignments', assignmentId);
   };
+
+  const handleAssignmentComplete = () => {
+    if (onCompleteTakeAssignment) {
+      onCompleteTakeAssignment();
+    } else {
+      setShowTakeAssignment(false);
+      setSelectedAssignmentId(null);
+      updateUrlParams('assignments');
+      toast({
+        title: "Assignment submitted",
+        description: "Your assignment has been submitted successfully."
+      });
+    }
+  };
   
   if (showCreateAssignment) {
     return (
@@ -113,15 +129,7 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
     return (
       <TakeAssignment 
         assignment={selectedAssignment}
-        onComplete={() => {
-          setShowTakeAssignment(false);
-          setSelectedAssignmentId(null);
-          updateUrlParams('assignments');
-          toast({
-            title: "Assignment submitted",
-            description: "Your assignment has been submitted successfully."
-          });
-        }}
+        onComplete={handleAssignmentComplete}
       />
     );
   }

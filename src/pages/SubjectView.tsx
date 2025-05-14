@@ -5,7 +5,7 @@ import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, File, Shield, AlertTriangle, FileText } from 'lucide-react';
+import { BookOpen, File, AlertTriangle, FileText } from 'lucide-react';
 import NotesTab from '@/components/subjects/NotesTab';
 import ResourcesTab from '@/components/subjects/ResourcesTab';
 import AssignmentsTab from '@/components/subjects/AssignmentsTab';
@@ -20,13 +20,14 @@ const SubjectView = () => {
   const searchParams = new URLSearchParams(location.search);
   const tabParam = searchParams.get('tab');
   const assignmentIdParam = searchParams.get('assignmentId');
+  const modeParam = searchParams.get('mode');
   
   const { user, subjects, warnings } = useAppContext();
   
   // Initialize activeTab state with URL parameter or default to 'notes'
   const initialTab = tabParam && ['notes', 'resources', 'assignments'].includes(tabParam) ? tabParam : 'notes';
   const [activeTab, setActiveTab] = useState<string>(initialTab);
-  const [showTakeAssignment, setShowTakeAssignment] = useState(false);
+  const [showTakeAssignment, setShowTakeAssignment] = useState(modeParam === 'take');
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(assignmentIdParam);
   
   // Update URL without triggering a full page reload
@@ -89,13 +90,33 @@ const SubjectView = () => {
       setSelectedAssignmentId(assignmentIdParam);
       
       // Check if we should immediately show the take assignment view
-      // This happens when navigated from the assignments dashboard
-      const shouldTakeAssignment = locationState && locationState.takeAssignment;
+      // This happens when navigated from the assignments dashboard or when mode=take
+      const shouldTakeAssignment = 
+        (locationState && locationState.takeAssignment) || 
+        modeParam === 'take';
+        
       if (shouldTakeAssignment) {
         setShowTakeAssignment(true);
       }
     }
-  }, [tabParam, assignmentIdParam, location.state, activeTab]);
+  }, [tabParam, assignmentIdParam, modeParam, location.state, activeTab]);
+
+  // When assignment is completed, close the page if opened in a new tab
+  const handleAssignmentComplete = () => {
+    if (modeParam === 'take') {
+      // If opened in a new tab, close the window after submission
+      window.close();
+      // Fallback if window.close() doesn't work (many browsers block it)
+      setShowTakeAssignment(false);
+      setSelectedAssignmentId(null);
+      updateUrlParams('assignments');
+    } else {
+      // Regular flow for same-window operation
+      setShowTakeAssignment(false);
+      setSelectedAssignmentId(null);
+      updateUrlParams('assignments');
+    }
+  };
   
   // Early return conditions
   if (!user || !subjectId) {
@@ -157,6 +178,7 @@ const SubjectView = () => {
               selectedAssignmentId={selectedAssignmentId}
               setSelectedAssignmentId={setSelectedAssignmentId}
               updateUrlParams={updateUrlParams}
+              onCompleteTakeAssignment={handleAssignmentComplete}
             />
           </TabsContent>
         </Tabs>
