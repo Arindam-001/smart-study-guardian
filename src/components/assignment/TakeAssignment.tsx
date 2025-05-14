@@ -12,7 +12,7 @@ import { useAppContext } from '@/lib/context';
 import StudentPerformanceCard from '@/components/student/StudentPerformanceCard';
 import RecommendationsCard from '@/components/student/RecommendationsCard';
 import { Input } from '@/components/ui/input';
-import { AlertTriangle, FileText, Book, Youtube, FileWord, Presentation } from 'lucide-react';
+import { AlertTriangle, FileText, Book, Youtube, File } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AssignmentEditor from './AssignmentEditor';
 
@@ -154,7 +154,7 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
         setPerformance(results);
         
         // Generate YouTube recommendations based on performance
-        const recommendations = generateYoutubeRecommendations(results);
+        const recommendations = generateYouTubeRecommendations(results);
         setYoutubeRecommendations(recommendations);
         
         toast({
@@ -291,10 +291,10 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
               <TabsList className="mb-4">
                 <TabsTrigger value="questions">Questions</TabsTrigger>
                 <TabsTrigger value="word" className="flex items-center gap-1">
-                  <FileWord className="h-4 w-4" />MS Word
+                  <File className="h-4 w-4" />MS Word
                 </TabsTrigger>
                 <TabsTrigger value="ppt" className="flex items-center gap-1">
-                  <Presentation className="h-4 w-4" />MS PowerPoint
+                  <FileText className="h-4 w-4" />MS PowerPoint
                 </TabsTrigger>
               </TabsList>
               
