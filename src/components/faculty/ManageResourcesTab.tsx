@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useAppContext } from '@/lib/context';
 import { Button } from '@/components/ui/button';
@@ -23,22 +22,20 @@ const ManageResourcesTab: React.FC<ManageResourcesTabProps> = ({
   const subject = subjects.find(s => s.id === selectedSubject);
   const subjectResources = subject?.resources || [];
   
-  const handleResourceAdded = (resource: Resource) => {
-    onResourceAdded();
+  const handleResourceAdded = (resource: Partial<Resource>) => {
+    if (resource.title && resource.url && resource.type) {
+      // Call addResource with the correct number of arguments: subjectId, title, url, type
+      addResource(selectedSubject, resource.title, resource.url, resource.type);
+      onResourceAdded();
+    }
     setIsAddDialogOpen(false);
   };
   
   const handleBulkUpload = (resources: Partial<Resource>[]) => {
     resources.forEach(resource => {
       if (resource.title && resource.url && resource.type && resource.level && resource.topic) {
-        addResource(selectedSubject, {
-          title: resource.title,
-          url: resource.url,
-          type: resource.type as 'video' | 'document' | 'link',
-          level: resource.level as 'beginner' | 'intermediate' | 'advanced',
-          topic: resource.topic,
-          description: resource.description || '',
-        });
+        // Call addResource with correct arguments
+        addResource(selectedSubject, resource.title, resource.url, resource.type);
       }
     });
     
@@ -51,6 +48,7 @@ const ManageResourcesTab: React.FC<ManageResourcesTabProps> = ({
     }
   };
 
+  
   return (
     <div>
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-between sm:items-center mb-6">

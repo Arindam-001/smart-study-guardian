@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -25,12 +24,8 @@ const ManageNotesTab: React.FC<ManageNotesTabProps> = ({ notes, selectedSubject,
 
   const handleAddNote = (title: string, content: string) => {
     if (selectedSubject) {
-      // Include updatedAt in the note object
-      addNote(selectedSubject, { 
-        title, 
-        content,
-        updatedAt: new Date() 
-      });
+      // Call addNote with the correct number of arguments: subjectId, title, content
+      addNote(selectedSubject, title, content);
       
       setShowAddNote(false);
       if (onNoteAdded) {
