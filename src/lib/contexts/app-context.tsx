@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, UserRole, Subject, Note, Resource, Assignment, Warning, StudentPerformance } from '@/lib/interfaces/types';
 import { AssignmentSubmission } from '@/lib/interfaces/assignment';
@@ -93,6 +94,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Import functionality from separate modules
   const { login, logout, registerUser } = useAuthFunctions(usersList, setUser, setUsers);
   
+  // Use the subject functions that now match the expected signatures
   const { 
     addSubject, updateSubjects, addNote, deleteNote, 
     addResource, deleteResource, assignTeacher, unassignTeacher 
@@ -133,7 +135,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Context value
   const contextValue: AppContextType = {
     user,
-    setUser, // Expose setUser to components
+    setUser,
     users: usersList,
     isAuthenticated: !!user,
     login,

@@ -35,6 +35,11 @@ const FacultyDashboard = () => {
     );
   }
 
+  // Wrapper function to match the signature expected by FacultyDashboardContainer
+  const handleUpdateAttendance = (studentId: string, subjectId: string, date: string, present: boolean) => {
+    return updateAttendance(studentId, subjectId, present);
+  };
+
   return (
     <DashboardLayout title="Faculty Dashboard">
       <ImpersonationAlert 
@@ -55,7 +60,7 @@ const FacultyDashboard = () => {
         onResourceAdded={handleResourceAdded}
         onNoteAdded={handleNoteAdded}
         onAssignmentAdded={handleAssignmentAdded}
-        updateAttendance={updateAttendance}
+        updateAttendance={handleUpdateAttendance}
       />
     </DashboardLayout>
   );

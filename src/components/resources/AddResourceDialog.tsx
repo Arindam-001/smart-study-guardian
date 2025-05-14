@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -30,7 +29,7 @@ interface AddResourceDialogProps {
   onClose: () => void;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  onResourceAdded?: (resource: Resource) => void;
+  onResourceAdded?: (resourceId: string) => void;
 }
 
 const AddResourceDialog: React.FC<AddResourceDialogProps> = ({ 
@@ -77,14 +76,8 @@ const AddResourceDialog: React.FC<AddResourceDialogProps> = ({
     setIsSubmitting(true);
 
     try {
-      const resource = addResource(subjectId, {
-        title,
-        description,
-        url,
-        type,
-        level,
-        topic,
-      });
+      // Call addResource with the correct parameters
+      const resourceId = addResource(subjectId, title, url, type);
 
       toast({
         title: "Resource Added",
@@ -92,7 +85,7 @@ const AddResourceDialog: React.FC<AddResourceDialogProps> = ({
       });
 
       if (onResourceAdded) {
-        onResourceAdded(resource);
+        onResourceAdded(resourceId);
       }
       
       onClose();

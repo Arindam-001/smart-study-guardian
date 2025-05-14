@@ -39,7 +39,7 @@ export interface AppContextType {
   // Student management
   grantSemesterAccess: (studentId: string, semesterId: number) => boolean;
   updateAttendance: (studentId: string, subjectId: string, present: boolean, date?: Date) => boolean;
-  getStudentPerformance: (studentId: string) => StudentPerformance | undefined;
+  getStudentPerformance: (studentId: string) => StudentPerformance[];
   
   // Data management
   semesters: number[];

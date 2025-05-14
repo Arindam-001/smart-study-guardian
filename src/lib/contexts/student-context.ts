@@ -8,7 +8,7 @@ export const useStudentFunctions = (
   studentPerformanceList: StudentPerformance[]
 ) => {
   // Add warning function
-  const addWarning = (studentId: string, assignmentId: string, reason: string): void => {
+  const addWarning = (studentId: string, assignmentId: string, reason: string): Warning => {
     const newWarning: Warning = {
       id: `warning_${Date.now()}`,
       studentId,
@@ -18,10 +18,11 @@ export const useStudentFunctions = (
     };
     
     setWarnings(prev => [...prev, newWarning]);
+    return newWarning;
   };
 
   // Grant semester access function
-  const grantSemesterAccess = (studentId: string, semesterId: number): void => {
+  const grantSemesterAccess = (studentId: string, semesterId: number): boolean => {
     setUsers(prevUsers => 
       prevUsers.map(u => 
         u.id === studentId
@@ -35,10 +36,11 @@ export const useStudentFunctions = (
           : u
       )
     );
+    return true;
   };
 
   // Update attendance function
-  const updateAttendance = (studentId: string, subjectId: string, date: string, present: boolean): void => {
+  const updateAttendance = (studentId: string, subjectId: string, present: boolean, date?: Date): boolean => {
     setUsers(prevUsers => 
       prevUsers.map(u => {
         if (u.id !== studentId) return u;
@@ -46,7 +48,7 @@ export const useStudentFunctions = (
         const attendance = u.attendance || {};
         const subjectAttendance = attendance[subjectId] || [];
         
-        // Find the index of the date, or -1 if not found
+        // Find the index of the date, or use length if not found
         const dateIndex = subjectAttendance.length;
         
         const newSubjectAttendance = [...subjectAttendance];
@@ -61,6 +63,7 @@ export const useStudentFunctions = (
         };
       })
     );
+    return true;
   };
 
   // Get student performance function

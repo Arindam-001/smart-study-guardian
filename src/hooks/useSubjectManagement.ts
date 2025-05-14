@@ -6,7 +6,7 @@ import { useToast } from '@/components/ui/use-toast';
 // Create a modified version that doesn't directly depend on AppContext
 export const useSubjectManagement = (
   subjects: Subject[] = [],
-  addSubject: (subject: Omit<Subject, 'id' | 'notes'>) => Subject = () => ({ id: '', name: '', semesterId: 1, notes: [] }),
+  addSubject: (subject: { name: string; semesterId: number; description?: string; }) => Subject = () => ({ id: '', name: '', semesterId: 1, notes: [] }),
   updateSubjects: (subjects: Subject[]) => void = () => {},
   users: any[] = [],
   semesterId?: number
@@ -39,11 +39,11 @@ export const useSubjectManagement = (
       return;
     }
 
+    // Using the new signature compatible with both old and new contexts
     const newSubject = addSubject({
       name: newSubjectName,
       semesterId: newSubjectSemester,
-      description: newSubjectDescription,
-      teacherId: newSubjectTeacher || undefined
+      description: newSubjectDescription
     });
 
     toast({

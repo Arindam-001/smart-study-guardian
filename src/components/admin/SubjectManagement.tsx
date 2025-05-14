@@ -14,6 +14,11 @@ interface SubjectManagementProps {
 const SubjectManagement: React.FC<SubjectManagementProps> = ({ semesterId }) => {
   const { subjects, users, addSubject, updateSubjects } = useAppContext();
   
+  // Create wrapped addSubject function to match the useSubjectManagement hook's expected signature
+  const wrappedAddSubject = (subject: { name: string; semesterId: number; description?: string; }) => {
+    return addSubject(subject.name, subject.semesterId, subject.description);
+  };
+  
   const {
     isAddDialogOpen,
     setIsAddDialogOpen,
@@ -33,7 +38,7 @@ const SubjectManagement: React.FC<SubjectManagementProps> = ({ semesterId }) => 
     handleEditSubject,
     handleDeleteSubject,
     openEditDialog
-  } = useSubjectManagement(subjects, addSubject, updateSubjects, users, semesterId);
+  } = useSubjectManagement(subjects, wrappedAddSubject, updateSubjects, users, semesterId);
 
   return (
     <div className="space-y-4">

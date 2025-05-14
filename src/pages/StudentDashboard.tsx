@@ -14,8 +14,6 @@ import OverviewTab from '@/components/dashboard/OverviewTab';
 import AssignmentsTab from '@/components/dashboard/AssignmentsTab';
 import PerformanceTab from '@/components/dashboard/PerformanceTab';
 import AttendanceTab from '@/components/dashboard/AttendanceTab';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserCheck } from 'lucide-react';
 import NotesTab from '@/components/dashboard/NotesTab';
