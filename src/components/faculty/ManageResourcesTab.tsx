@@ -34,7 +34,7 @@ const ManageResourcesTab: React.FC<ManageResourcesTabProps> = ({
   
   const handleBulkUpload = (resources: Partial<Resource>[]) => {
     resources.forEach(resource => {
-      if (resource.title && resource.url && resource.type && resource.level && resource.topic) {
+      if (resource.title && resource.url && resource.type) {
         // Call addResource with correct arguments
         addResource(selectedSubject, resource.title, resource.url, resource.type);
       }
