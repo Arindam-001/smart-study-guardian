@@ -1,13 +1,74 @@
 
 import { useState } from 'react';
 import { useAppContext } from '@/lib/context';
-import { useToast } from '@/hooks/use-toast';
-import { Note, Resource } from '@/lib/interfaces/types';
+import { useToast } from '@/components/ui/use-toast';
+import { Note, Resource, Question } from '@/lib/interfaces/types';
 
 interface UseAssignmentGeneratorProps {
   subjectId: string;
   onAssignmentCreated: () => void;
 }
+
+// Helper function to generate questions from content using simulated NLP
+const generateQuestionsFromContent = (content: string[], count: number): Question[] => {
+  const questions: Question[] = [];
+  
+  // Basic question templates
+  const templates = [
+    { prefix: "What is ", suffix: "?" },
+    { prefix: "Explain the concept of ", suffix: "." },
+    { prefix: "Define ", suffix: "." },
+    { prefix: "How would you describe ", suffix: "?" },
+    { prefix: "Compare and contrast ", suffix: " with related concepts." },
+    { prefix: "What are the main characteristics of ", suffix: "?" },
+    { prefix: "Discuss the importance of ", suffix: "." },
+    { prefix: "Analyze the role of ", suffix: " in this context." },
+  ];
+  
+  // Extract important keywords from content
+  const keywords: string[] = [];
+  content.forEach(text => {
+    // Simple keyword extraction - split by spaces and punctuation
+    const words = text.split(/[\s.,;:!?()[\]{}'"\/\\<>-]+/).filter(word => 
+      word.length > 3 && !["this", "that", "with", "from", "about", "which", "these", "those"].includes(word.toLowerCase())
+    );
+    
+    keywords.push(...words);
+  });
+  
+  // Generate unique keywords array
+  const uniqueKeywords = [...new Set(keywords)];
+  
+  // Generate questions
+  for (let i = 0; i < Math.min(count, uniqueKeywords.length * templates.length); i++) {
+    const keywordIndex = i % uniqueKeywords.length;
+    const templateIndex = Math.floor(i / uniqueKeywords.length) % templates.length;
+    
+    const keyword = uniqueKeywords[keywordIndex];
+    const template = templates[templateIndex];
+    
+    const questionId = `q_${Date.now()}_${i}`;
+    const questionText = `${template.prefix}${keyword}${template.suffix}`;
+    
+    // Generate multiple choice options (basic implementation)
+    const options = [
+      { id: `${questionId}_opt_a`, text: `Option A related to ${keyword}` },
+      { id: `${questionId}_opt_b`, text: `Option B related to ${keyword}` },
+      { id: `${questionId}_opt_c`, text: `Option C related to ${keyword}` },
+      { id: `${questionId}_opt_d`, text: `Option D related to ${keyword}` },
+    ];
+    
+    questions.push({
+      id: questionId,
+      text: questionText,
+      options,
+      correctOptionId: options[0].id, // First option as correct by default
+      explanation: `This question tests understanding of ${keyword}.`
+    });
+  }
+  
+  return questions;
+};
 
 export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAssignmentGeneratorProps) => {
   const [isGenerating, setIsGenerating] = useState(false);
@@ -90,7 +151,16 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
       const notesToUse: Note[] = subject.notes.filter(note => selectedNotes.includes(note.id));
       const resourcesToUse: Resource[] = (subject.resources || []).filter(resource => selectedResources.includes(resource.id));
       
-      // Pass the notes and resources to createAssignment for generating questions
+      // Extract content from notes and resources
+      const contentToAnalyze: string[] = [
+        ...notesToUse.map(note => note.content),
+        ...resourcesToUse.map(resource => resource.title + ' ' + (resource.description || '') + ' ' + (resource.topic || ''))
+      ];
+      
+      // Generate questions using our NLP simulator
+      const generatedQuestions = generateQuestionsFromContent(contentToAnalyze, parseInt(questionCount) || 20);
+      
+      // Create assignment with generated questions
       const assignment = createAssignment(
         subjectId, 
         title, 
@@ -99,6 +169,9 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
         notesToUse,
         resourcesToUse
       );
+      
+      // Update the assignment with the generated questions
+      assignment.questions = generatedQuestions;
       
       toast({
         title: "Success",
@@ -111,6 +184,7 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
       setSelectedResources([]);
       onAssignmentCreated();
     } catch (error) {
+      console.error("Error generating assignment:", error);
       toast({
         title: "Error",
         description: "Failed to generate assignment",
@@ -128,9 +202,9 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
     title,
     setTitle,
     selectedNotes,
-    setSelectedNotes,
+    selectedNotes,
     selectedResources,
-    setSelectedResources,
+    selectedResources,
     dueDate,
     setDueDate,
     enableProctoring,

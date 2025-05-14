@@ -32,6 +32,15 @@ export const useAssignmentFunctions = (
     return newAssignment;
   };
 
+  // Delete assignment function
+  const deleteAssignment = (assignmentId: string): boolean => {
+    const assignmentIndex = assignmentsList.findIndex(a => a.id === assignmentId);
+    if (assignmentIndex === -1) return false;
+    
+    setAssignments(prev => prev.filter(a => a.id !== assignmentId));
+    return true;
+  };
+
   // Submit assignment function
   const submitAssignment = (
     assignmentId: string, 
@@ -55,6 +64,7 @@ export const useAssignmentFunctions = (
 
   return { 
     createAssignment, 
+    deleteAssignment,
     submitAssignment, 
     getSubmissionsByAssignment, 
     getSubmissionsByStudent

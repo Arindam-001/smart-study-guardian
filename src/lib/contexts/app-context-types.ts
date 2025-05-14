@@ -1,22 +1,23 @@
 
-import { User, UserRole, Subject, Note, Resource, Assignment, Warning, StudentPerformance } from '@/lib/interfaces/types';
-import { AssignmentSubmission } from '@/lib/interfaces/assignment';
+import { User, Subject, Note, Resource, Assignment, Warning, StudentPerformance } from '../interfaces/types';
+import { AssignmentSubmission } from '../interfaces/assignment';
 
 export interface AppContextType {
   user: User | null;
   users: User[];
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => Promise<void>;
-  registerUser: (name: string, email: string, password: string, id: string, role: UserRole, currentSemester?: number, phone?: string, enrolledCourse?: string) => Promise<boolean>;
+  login: (email: string, password: string) => User | null;
+  logout: () => void;
+  registerUser: (userData: Omit<User, 'id'>) => User;
   subjects: Subject[];
-  addSubject: (subject: Omit<Subject, 'id' | 'notes'>) => Subject;
+  addSubject: (subject: Omit<Subject, 'id'>) => Subject;
   updateSubjects: (subjects: Subject[]) => void;
-  addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt'>) => Note;
   deleteNote: (subjectId: string, noteId: string) => void;
   addResource: (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => Resource;
   deleteResource: (subjectId: string, resourceId: string) => void;
   createAssignment: (subjectId: string, title: string, dueDate?: Date, duration?: number, selectedNotes?: Note[], selectedResources?: Resource[]) => Assignment;
+  deleteAssignment: (assignmentId: string) => boolean;
   submitAssignment: (assignmentId: string, studentId: string, answers: Record<string, string>, fileUrl?: string) => any;
   addWarning: (studentId: string, assignmentId: string, reason: string) => void;
   warnings: Warning[];

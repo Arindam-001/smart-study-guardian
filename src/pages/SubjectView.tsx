@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -71,29 +72,30 @@ const SubjectView = () => {
   
   // Keep tab state in sync with URL params
   useEffect(() => {
-    // Only process if not from internal navigation
-    const isFromNavigation = location.state && (location.state as any).tabChange;
+    const locationState = location.state as any;
+    const isFromNavigation = locationState && locationState.tabChange;
     
     if (!isFromNavigation) {
       const validTabs = ['notes', 'resources', 'assignments'];
       const newTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'notes';
       
-      console.log(`URL param tab: ${tabParam}, Setting tab to: ${newTab}`);
-      
-      // Only update if different to avoid re-renders
       if (activeTab !== newTab) {
         setActiveTab(newTab);
       }
+    }
+    
+    // Handle assignment ID parameter and taking assignment directly
+    if (assignmentIdParam) {
+      setSelectedAssignmentId(assignmentIdParam);
       
-      // Handle assignment ID parameter
-      if (assignmentIdParam) {
-        setSelectedAssignmentId(assignmentIdParam);
-        if (newTab === 'assignments') {
-          setShowTakeAssignment(true);
-        }
+      // Check if we should immediately show the take assignment view
+      // This happens when navigated from the assignments dashboard
+      const shouldTakeAssignment = locationState && locationState.takeAssignment;
+      if (shouldTakeAssignment) {
+        setShowTakeAssignment(true);
       }
     }
-  }, [tabParam, assignmentIdParam, location.state]);
+  }, [tabParam, assignmentIdParam, location.state, activeTab]);
   
   // Early return conditions
   if (!user || !subjectId) {

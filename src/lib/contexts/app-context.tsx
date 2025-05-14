@@ -81,7 +81,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   } = useSubjectFunctions(setSubjects);
   
   const { 
-    createAssignment, submitAssignment,
+    createAssignment, deleteAssignment, submitAssignment,
     getSubmissionsByAssignment, getSubmissionsByStudent 
   } = useAssignmentFunctions(setAssignments, assignmentsList, submissionsList);
   
@@ -128,6 +128,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
     addResource,
     deleteResource,
     createAssignment,
+    deleteAssignment,
     submitAssignment,
     addWarning,
     warnings: warningsList,

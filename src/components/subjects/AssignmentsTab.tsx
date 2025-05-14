@@ -4,12 +4,13 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAppContext } from '@/lib/context';
 import { Assignment, Subject } from '@/lib/interfaces/types';
-import { Shield, AlertTriangle, File } from 'lucide-react';
+import { Shield, AlertTriangle, File, Trash2 } from 'lucide-react';
 import SubmissionsView from '@/components/faculty/SubmissionsView';
 import CreateAssignmentForm from '@/components/assignment/CreateAssignmentForm';
 import TakeAssignment from '@/components/assignment/TakeAssignment';
 import AssignmentEditor from '@/components/assignment/AssignmentEditor';
 import { useToast } from '@/components/ui/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import QuickAssignmentGenerator from '@/components/faculty/QuickAssignmentGenerator';
 
 interface AssignmentsTabProps {
@@ -31,9 +32,11 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
 }) => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user, assignments, warnings } = useAppContext();
+  const { user, assignments, warnings, deleteAssignment } = useAppContext();
   const [showCreateAssignment, setShowCreateAssignment] = useState(false);
   const [showAssignmentEditor, setShowAssignmentEditor] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
   
   const isTeacherOrAdmin = user?.role === 'teacher' || user?.role === 'admin';
   const hasWarnings = warnings.some(w => w.assignmentId.startsWith(subject.id));
@@ -49,6 +52,37 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
       title: "Assignment created",
       description: "The assignment has been successfully created."
     });
+  };
+
+  const handleDeleteConfirm = () => {
+    if (assignmentToDelete) {
+      const success = deleteAssignment(assignmentToDelete);
+      if (success) {
+        toast({
+          title: "Assignment deleted",
+          description: "The assignment has been successfully deleted."
+        });
+        
+        // If the deleted assignment was selected, clear the selection
+        if (assignmentToDelete === selectedAssignmentId) {
+          setSelectedAssignmentId(null);
+          updateUrlParams('assignments');
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to delete assignment",
+          variant: "destructive"
+        });
+      }
+      setShowDeleteDialog(false);
+      setAssignmentToDelete(null);
+    }
+  };
+  
+  const handleDeleteClick = (assignmentId: string) => {
+    setAssignmentToDelete(assignmentId);
+    setShowDeleteDialog(true);
   };
   
   return (
@@ -123,6 +157,27 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
         />
       )}
       
+      {/* Delete Assignment Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Assignment</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this assignment? This action cannot be undone,
+              and all student submissions will be lost.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
       {/* Subject Assignments List */}
       {!showCreateAssignment && !showTakeAssignment && !showAssignmentEditor && (
         <>
@@ -147,7 +202,7 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                       </div>
                       <div className="flex flex-col gap-2">
                         {isTeacherOrAdmin ? (
-                          <>
+                          <div className="flex gap-2">
                             <Button 
                               size="sm" 
                               onClick={() => {
@@ -157,7 +212,14 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                             >
                               View Submissions
                             </Button>
-                          </>
+                            <Button 
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteClick(assignment.id)}
+                            >
+                              <Trash2 size={16} />
+                            </Button>
+                          </div>
                         ) : (
                           <Button 
                             size="sm" 
