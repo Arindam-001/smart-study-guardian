@@ -77,7 +77,7 @@ const StudentDashboard = () => {
   // Calculate overall performance statistics
   const totalAssignments = studentPerformances.length;
   const totalQuestions = studentPerformances.reduce(
-    (sum, p) => sum + Object.values(p.topics).reduce((s, t) => s + t.total, 0), 
+    (sum, p) => sum + Object.values(p.topics).reduce((s, t) => s + (t.total || 0), 0), 
     0
   );
   const totalCorrect = studentPerformances.reduce(

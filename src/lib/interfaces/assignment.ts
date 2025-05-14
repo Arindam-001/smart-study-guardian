@@ -1,14 +1,16 @@
 
-import { PlagiarismDetail } from './types';
+import { User } from './types';
 
 export interface AssignmentSubmission {
   id: string;
   assignmentId: string;
   studentId: string;
-  answers: Record<string, string>;
+  studentName?: string;
   submittedAt: Date;
-  score: number;
+  answers: Record<string, string>;
+  score?: number;
   fileUrl?: string;
-  plagiarismScore: number;
-  plagiarismDetails: PlagiarismDetail[];
+  status: 'pending' | 'graded' | 'late';
+  feedback?: string;
+  user?: User;  // Optional reference to the student
 }
