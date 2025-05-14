@@ -14,8 +14,8 @@ export const useAssignmentFunctions = (
     title: string, 
     dueDate?: Date, 
     duration?: number, 
-    selectedNotes?: Note[] | undefined,
-    selectedResources?: Resource[] | undefined
+    selectedNotes?: Note[], 
+    selectedResources?: Resource[]
   ): Assignment => {
     const newAssignment: Assignment = {
       id: `assignment_${Date.now()}`,

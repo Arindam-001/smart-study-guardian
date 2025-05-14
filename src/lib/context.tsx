@@ -5,3 +5,4 @@
 export { useAppContext, AppProvider } from './contexts/app-context';
 export type { AppContextType } from './contexts/app-context-types';
 export { useRealTimeSync } from './hooks/useRealTimeSync';
+export { useAssignmentFunctions } from './contexts/assignment-context';
