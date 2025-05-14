@@ -111,7 +111,7 @@ export const RegisterForm = () => {
     }
 
     try {
-      // First try with the signUp function from user-management
+      // First try with the signUp function from user-management with userData object
       const success = await signUp(
         name,
         email,

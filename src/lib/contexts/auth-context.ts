@@ -45,17 +45,27 @@ export const useAuthFunctions = (
     localStorage.removeItem(STORAGE_KEYS.AUTH_USER);
   };
 
-  // Register user function
+  // Register user function - Updated to match the type definition in app-context-types.ts
   const registerUser = async (
-    name: string, 
-    email: string, 
-    password: string, 
-    id: string, 
-    role: UserRole, 
-    currentSemester: number = 1,
-    phone?: string,
-    enrolledCourse?: string
+    userData: Omit<User, 'id'> | {
+      name: string;
+      email: string;
+      password: string;
+      id: string;
+      role: string;
+      currentSemester?: number;
+      phone?: string;
+      enrolledCourse?: string;
+    }
   ): Promise<boolean> => {
+    // Handle both object formats
+    const { 
+      name, email, id, role, currentSemester = 1, phone, enrolledCourse 
+    } = userData;
+    
+    // Password might be included in the object but not in the User type
+    const password = 'password' in userData ? userData.password : '';
+    
     // Check if user with same email already exists
     const existingUser = usersList.find(u => u.email === email || u.id === id);
     if (existingUser) {
@@ -67,9 +77,9 @@ export const useAuthFunctions = (
       id,
       name,
       email,
-      role,
-      currentSemester,
-      accessibleSemesters: role === 'student' ? [currentSemester] : [1, 2, 3, 4, 5, 6, 7, 8],
+      role: role as UserRole,
+      currentSemester: typeof currentSemester === 'number' ? currentSemester : 1,
+      accessibleSemesters: role === 'student' ? [currentSemester as number] : [1, 2, 3, 4, 5, 6, 7, 8],
       phone,
       enrolledCourse,
     };
