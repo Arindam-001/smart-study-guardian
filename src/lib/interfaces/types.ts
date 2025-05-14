@@ -31,6 +31,7 @@ export interface Note {
   attachments?: string[];
   createdAt: Date;
   updatedAt: Date;
+  subjectId: string; // Added subjectId property
 }
 
 export interface Resource {

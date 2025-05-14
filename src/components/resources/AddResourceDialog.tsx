@@ -7,11 +7,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Resource } from '@/lib/interfaces/types';
 
 interface AddResourceDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onResourceAdded: (resource: Partial<Resource>) => void; // Ensures this matches the function type in ManageResourcesTab
-  subjectId: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  onResourceAdded?: (resource: Partial<Resource>) => void;
+  subjectId?: string;
   onClose: () => void;
+  noteTopic?: string; // Added this prop to accept the topic from a note
 }
 
 const AddResourceDialog: React.FC<AddResourceDialogProps> = ({
@@ -19,36 +20,52 @@ const AddResourceDialog: React.FC<AddResourceDialogProps> = ({
   onOpenChange,
   onResourceAdded,
   subjectId,
-  onClose
+  onClose,
+  noteTopic
 }) => {
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [type, setType] = useState<'video' | 'document' | 'link'>('video');
-  const [topic, setTopic] = useState('');
+  const [topic, setTopic] = useState(noteTopic || '');
   const [level, setLevel] = useState<'beginner' | 'intermediate' | 'advanced'>('intermediate');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    onResourceAdded({
-      title,
-      url,
-      type,
-      topic: topic || 'general',
-      level,
-      subjectId
-    });
+    if (onResourceAdded && subjectId) {
+      onResourceAdded({
+        title,
+        url,
+        type,
+        topic: topic || 'general',
+        level,
+        subjectId
+      });
+    }
     
     // Reset form
     setTitle('');
     setUrl('');
     setType('video');
-    setTopic('');
+    setTopic(noteTopic || '');
     setLevel('intermediate');
+    
+    // Close the dialog
+    onClose();
   };
+  
+  // If a noteTopic is provided but no open/onOpenChange props, 
+  // manage dialog state internally
+  const [internalOpen, setInternalOpen] = useState(true);
+  
+  const effectiveOpen = open !== undefined ? open : internalOpen;
+  const effectiveOnOpenChange = onOpenChange || ((newOpen: boolean) => {
+    setInternalOpen(newOpen);
+    if (!newOpen) onClose();
+  });
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={effectiveOpen} onOpenChange={effectiveOnOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add Resource</DialogTitle>

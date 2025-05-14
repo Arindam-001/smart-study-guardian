@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Note } from '@/lib/interfaces/types';
 import { format } from 'date-fns';
 import AddResourceDialog from '@/components/resources/AddResourceDialog';
+import { useAppContext } from '@/lib/context';
 
 interface NoteItemProps {
   note: Note;
@@ -15,6 +16,7 @@ interface NoteItemProps {
 const NoteItem: React.FC<NoteItemProps> = ({ note, isTeacher, onDelete }) => {
   const [showFullContent, setShowFullContent] = useState(false);
   const [showAddResource, setShowAddResource] = useState(false);
+  const { addResource } = useAppContext();
 
   const toggleContent = () => {
     setShowFullContent(!showFullContent);
@@ -23,6 +25,14 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, isTeacher, onDelete }) => {
   const shortContent = note.content.length > 200 
     ? note.content.substring(0, 200) + '...' 
     : note.content;
+
+  // Handle adding a resource related to this note
+  const handleResourceAdded = (resource: Partial<Resource>) => {
+    if (resource.title && resource.url && resource.type && resource.subjectId) {
+      addResource(resource.subjectId, resource.title, resource.url, resource.type);
+    }
+    setShowAddResource(false);
+  };
 
   return (
     <Card>
@@ -69,6 +79,8 @@ const NoteItem: React.FC<NoteItemProps> = ({ note, isTeacher, onDelete }) => {
         <AddResourceDialog 
           noteTopic={note.title}
           onClose={() => setShowAddResource(false)}
+          subjectId={note.subjectId} // Add the subjectId
+          onResourceAdded={handleResourceAdded}
         />
       )}
     </Card>
