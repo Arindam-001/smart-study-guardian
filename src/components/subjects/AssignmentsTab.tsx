@@ -10,6 +10,7 @@ import CreateAssignmentForm from '@/components/assignment/CreateAssignmentForm';
 import TakeAssignment from '@/components/assignment/TakeAssignment';
 import AssignmentEditor from '@/components/assignment/AssignmentEditor';
 import { useToast } from '@/components/ui/use-toast';
+import QuickAssignmentGenerator from '@/components/faculty/QuickAssignmentGenerator';
 
 interface AssignmentsTabProps {
   subject: Subject;
@@ -43,18 +44,21 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
     subjectAssignments.find(a => a.id === selectedAssignmentId) : 
     subjectAssignments[0];
   
+  const handleAssignmentCreated = () => {
+    toast({
+      title: "Assignment created",
+      description: "The assignment has been successfully created."
+    });
+  };
+  
   return (
     <div className="mb-6">
       {isTeacherOrAdmin && !showCreateAssignment && !showTakeAssignment && !showAssignmentEditor && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-          <Button 
-            onClick={() => setShowCreateAssignment(true)} 
-            className="bg-edu-primary h-auto py-6 flex flex-col items-center gap-2"
-          >
-            <Shield size={24} />
-            <span className="font-medium">Create Assignment</span>
-            <span className="text-xs text-white/80">Generate questions from notes</span>
-          </Button>
+          <QuickAssignmentGenerator 
+            subjectId={subject.id} 
+            onAssignmentCreated={handleAssignmentCreated}
+          />
           
           <Button 
             variant="outline" 

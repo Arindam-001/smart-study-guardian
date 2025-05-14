@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -15,6 +14,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserCheck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getItem, setItem } from '@/lib/local-storage';
+import QuickAssignmentGenerator from '@/components/faculty/QuickAssignmentGenerator';
 
 const FACULTY_STORAGE_KEY = 'FACULTY_DASHBOARD_STATE';
 
@@ -90,6 +90,14 @@ const FacultyDashboard = () => {
     });
   };
   
+  // Function to handle assignment added notification
+  const handleAssignmentAdded = () => {
+    toast({
+      title: "Assignment Added",
+      description: "Students can now access this assignment",
+    });
+  };
+  
   // Handle tab change
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -155,6 +163,7 @@ const FacultyDashboard = () => {
               <TabsList className="mb-6">
                 <TabsTrigger value="resources">Manage Resources</TabsTrigger>
                 <TabsTrigger value="notes">Manage Notes</TabsTrigger>
+                <TabsTrigger value="assignments">Manage Assignments</TabsTrigger>
                 <TabsTrigger value="attendance">Manage Attendance</TabsTrigger>
                 <TabsTrigger value="view-attendance">View Attendance</TabsTrigger>
                 <TabsTrigger value="students">View Students</TabsTrigger>
@@ -173,6 +182,16 @@ const FacultyDashboard = () => {
                   selectedSubject={selectedSubject}
                   onNoteAdded={handleNoteAdded}
                 />
+              </TabsContent>
+              
+              <TabsContent value="assignments">
+                <div className="mb-6">
+                  <QuickAssignmentGenerator 
+                    subjectId={selectedSubject}
+                    onAssignmentCreated={handleAssignmentAdded}
+                  />
+                </div>
+                <StudentAttendanceView subjectId={selectedSubject} />
               </TabsContent>
 
               <TabsContent value="attendance">

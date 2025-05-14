@@ -20,31 +20,29 @@ const SubjectAssignmentsCard: React.FC<SubjectAssignmentsCardProps> = ({
 }) => {
   return (
     <Card key={subject.id} className="overflow-hidden">
-      <CardHeader className="bg-muted/50">
+      <CardHeader className="bg-muted/50 pb-2">
         <CardTitle className="text-lg">{subject.name}</CardTitle>
         <CardDescription>Semester {currentSemester}</CardDescription>
       </CardHeader>
       <CardContent className="pt-4">
-        <div className="space-y-4">
-          {subjectAssignments.length > 0 ? (
-            <div className="space-y-3">
-              {subjectAssignments.map(assignment => (
-                <AssignmentCard
-                  key={assignment.id}
-                  assignment={assignment}
-                  navigateToAssignment={navigateToAssignment}
-                  subjectId={subject.id}
-                  semesterId={subject.semesterId}
-                />
-              ))}
-            </div>
-          ) : (
-            <EmptyAssignmentState 
-              subjectId={subject.id} 
-              semesterId={subject.semesterId} 
-            />
-          )}
-        </div>
+        {subjectAssignments.length > 0 ? (
+          <div className="space-y-4">
+            {subjectAssignments.map(assignment => (
+              <AssignmentCard
+                key={assignment.id}
+                assignment={assignment}
+                navigateToAssignment={navigateToAssignment}
+                subjectId={subject.id}
+                semesterId={subject.semesterId}
+              />
+            ))}
+          </div>
+        ) : (
+          <EmptyAssignmentState 
+            subjectId={subject.id} 
+            semesterId={subject.semesterId} 
+          />
+        )}
       </CardContent>
     </Card>
   );

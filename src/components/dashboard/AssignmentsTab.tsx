@@ -5,6 +5,7 @@ import { Subject } from '@/lib/interfaces/types';
 import { useAppContext } from '@/lib/context';
 import SubjectAssignmentsCard from './SubjectAssignmentsCard';
 import EmptySubjectsState from './EmptySubjectsState';
+import useAssignments from '@/hooks/useAssignments';
 
 interface AssignmentsTabProps {
   currentSemesterSubjects: Subject[];
@@ -20,7 +21,7 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   
   // Safe navigation to subject page with assignment tab pre-selected
   const navigateToAssignment = useCallback((subjectId: string, semesterId: number, assignmentId: string) => {
-    // Use state to help prevent full page refresh during tab changes
+    // Navigate directly to take assignment view
     navigate(`/semester/${semesterId}/subject/${subjectId}?tab=assignments&assignmentId=${assignmentId}`, { 
       state: { tabChange: true } 
     });
@@ -28,10 +29,10 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
 
   return (
     <div className="space-y-4">
-      <h3 className="text-lg font-medium mb-2">Your Assignments</h3>
+      <h3 className="text-lg font-medium mb-4">Your Assignments</h3>
       
       {currentSemesterSubjects.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {currentSemesterSubjects.map(subject => {
             // Get assignments for this subject
             const subjectAssignments = assignments.filter(a => a.subjectId === subject.id);
