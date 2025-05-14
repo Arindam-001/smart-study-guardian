@@ -10,12 +10,14 @@ interface AssignmentCardProps {
   assignment: Assignment;
   subjectId: string;
   semesterId: number;
+  navigateToAssignment: (subjectId: string, semesterId: number, assignmentId: string) => void;
 }
 
 const AssignmentCard: React.FC<AssignmentCardProps> = ({
   assignment,
   subjectId,
-  semesterId
+  semesterId,
+  navigateToAssignment
 }) => {
   const { toast } = useToast();
   
