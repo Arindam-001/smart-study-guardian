@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import StudentPerformanceCard from '@/components/student/StudentPerformanceCard';
 import AttendanceCard from '@/components/student/AttendanceCard';
@@ -20,6 +20,14 @@ const OverviewTab: React.FC<OverviewTabProps> = ({
   setSelectedSubject,
   studentPerformances
 }) => {
+  // Log available resources for debugging
+  useEffect(() => {
+    if (selectedSubject) {
+      const subject = subjects.find(s => s.id === selectedSubject);
+      console.log("Selected subject resources:", subject?.resources);
+    }
+  }, [selectedSubject, subjects]);
+
   return (
     <div className="grid grid-cols-1 gap-4">
       {studentPerformances.length > 0 ? (

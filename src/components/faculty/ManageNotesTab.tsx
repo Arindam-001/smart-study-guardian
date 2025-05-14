@@ -5,18 +5,58 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Note } from '@/lib/interfaces/types';
+import { Input } from '@/components/ui/input';
+import { useAppContext } from '@/lib/context';
+import { PlusCircle, Eye } from 'lucide-react';
+import AddNoteForm from '@/components/notes/AddNoteForm';
 
 interface ManageNotesTabProps {
   notes: Note[];
+  selectedSubject: string;
+  onNoteAdded?: () => void;
 }
 
-const ManageNotesTab: React.FC<ManageNotesTabProps> = ({ notes }) => {
+const ManageNotesTab: React.FC<ManageNotesTabProps> = ({ notes, selectedSubject, onNoteAdded }) => {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [showAddNote, setShowAddNote] = useState(false);
+  const { addNote } = useAppContext();
+
+  const handleAddNote = (title: string, content: string) => {
+    if (selectedSubject) {
+      addNote(selectedSubject, { title, content });
+      setShowAddNote(false);
+      if (onNoteAdded) {
+        onNoteAdded();
+      }
+    }
+  };
 
   return (
     <>
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium">Subject Notes</h3>
+        <Button 
+          onClick={() => setShowAddNote(true)}
+          className="flex items-center gap-2"
+        >
+          <PlusCircle size={16} />
+          <span>Add New Note</span>
+        </Button>
+      </div>
+
+      {showAddNote && (
+        <div className="mb-6">
+          <AddNoteForm 
+            subjectId={selectedSubject} 
+            onComplete={() => {
+              setShowAddNote(false);
+              if (onNoteAdded) onNoteAdded();
+            }}
+          />
+        </div>
+      )}
+
       <div className="mt-6">
-        <h3 className="text-lg font-medium mb-4">Subject Notes</h3>
         <Table>
           <TableHeader>
             <TableRow>
@@ -37,7 +77,9 @@ const ManageNotesTab: React.FC<ManageNotesTabProps> = ({ notes }) => {
                     variant="outline" 
                     size="sm"
                     onClick={() => setSelectedNote(note)}
+                    className="flex items-center gap-1"
                   >
+                    <Eye size={14} />
                     View Note
                   </Button>
                 </TableCell>

@@ -13,6 +13,7 @@ import ManageAttendanceTab from '@/components/faculty/ManageAttendanceTab';
 import ViewStudentsTab from '@/components/faculty/ViewStudentsTab';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserCheck } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const FacultyDashboard = () => {
   const location = useLocation();
@@ -21,6 +22,7 @@ const FacultyDashboard = () => {
 
   const { user, subjects, users, updateAttendance } = useAppContext();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  const { toast } = useToast();
   
   // Get the actual user - either the logged-in user or the impersonated user
   const actualUser = impersonateId && user?.role === 'admin' 
@@ -39,6 +41,22 @@ const FacultyDashboard = () => {
       setSelectedSubject(taughtSubjects[0].id);
     }
   }, [subjects, taughtSubjects, selectedSubject]);
+
+  // Function to handle resource added notification
+  const handleResourceAdded = () => {
+    toast({
+      title: "Resource Added",
+      description: "Students can now access this resource",
+    });
+  };
+
+  // Function to handle note added notification
+  const handleNoteAdded = () => {
+    toast({
+      title: "Note Added",
+      description: "Students can now access this note",
+    });
+  };
 
   if (!actualUser || (actualUser.role !== 'teacher' && !impersonateId)) {
     return (
@@ -104,11 +122,18 @@ const FacultyDashboard = () => {
               </TabsList>
 
               <TabsContent value="resources">
-                <ManageResourcesTab selectedSubject={selectedSubject} />
+                <ManageResourcesTab 
+                  selectedSubject={selectedSubject} 
+                  onResourceAdded={handleResourceAdded}
+                />
               </TabsContent>
 
               <TabsContent value="notes">
-                <ManageNotesTab notes={notes} />
+                <ManageNotesTab 
+                  notes={notes} 
+                  selectedSubject={selectedSubject}
+                  onNoteAdded={handleNoteAdded}
+                />
               </TabsContent>
 
               <TabsContent value="attendance">

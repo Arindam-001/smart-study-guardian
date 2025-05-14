@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import NoteItem from '@/components/notes/NoteItem';
@@ -10,8 +10,10 @@ import { useAppContext } from '@/lib/context';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, File, Shield, AlertTriangle } from 'lucide-react';
+import { BookOpen, File, Shield, AlertTriangle, Link as LinkIcon, Video, FileText } from 'lucide-react';
 import SubmissionsView from '@/components/faculty/SubmissionsView';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Resource } from '@/lib/interfaces/types';
 
 const SubjectView = () => {
   const { semesterId, subjectId } = useParams<{ semesterId: string, subjectId: string }>();
@@ -53,6 +55,11 @@ const SubjectView = () => {
   // Check if there are warnings for this subject
   const hasWarnings = warnings.some(w => w.assignmentId.startsWith(subjectId));
   const isTeacherOrAdmin = user.role === 'teacher' || user.role === 'admin';
+  
+  // Get resources
+  const videoResources = subject.resources?.filter(r => r.type === 'video') || [];
+  const documentResources = subject.resources?.filter(r => r.type === 'document') || [];
+  const linkResources = subject.resources?.filter(r => r.type === 'link') || [];
 
   return (
     <DashboardLayout title={subject.name}>
@@ -62,6 +69,10 @@ const SubjectView = () => {
             <TabsTrigger value="notes" className="flex items-center gap-2">
               <BookOpen size={16} />
               <span>Notes</span>
+            </TabsTrigger>
+            <TabsTrigger value="resources" className="flex items-center gap-2">
+              <FileText size={16} />
+              <span>Resources</span>
             </TabsTrigger>
             <TabsTrigger value="assignments" className="flex items-center gap-2 relative">
               <File size={16} />
@@ -101,6 +112,82 @@ const SubjectView = () => {
                   {subject.notes.map(note => (
                     <NoteItem key={note.id} note={note} isTeacher={isTeacherOrAdmin} />
                   ))}
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="resources">
+            <div className="mb-6">
+              <h3 className="text-xl font-medium mb-4">Learning Resources</h3>
+              
+              {(!subject.resources || subject.resources.length === 0) ? (
+                <div className="text-center py-8 border rounded-lg bg-gray-50">
+                  <h3 className="text-lg font-medium text-edu-dark">No resources available for this subject yet.</h3>
+                  {isTeacherOrAdmin && (
+                    <p className="text-muted-foreground mt-2">
+                      Please add resources in the Faculty Dashboard.
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-8">
+                  {/* Video Resources */}
+                  {videoResources.length > 0 && (
+                    <div>
+                      <h4 className="text-lg font-medium mb-3 flex items-center">
+                        <Video className="h-5 w-5 mr-2" />
+                        Video Resources
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {videoResources.map(resource => (
+                          <ResourceCard 
+                            key={resource.id} 
+                            resource={resource} 
+                            type="video"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Document Resources */}
+                  {documentResources.length > 0 && (
+                    <div>
+                      <h4 className="text-lg font-medium mb-3 flex items-center">
+                        <FileText className="h-5 w-5 mr-2" />
+                        Document Resources
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {documentResources.map(resource => (
+                          <ResourceCard 
+                            key={resource.id} 
+                            resource={resource} 
+                            type="document"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Link Resources */}
+                  {linkResources.length > 0 && (
+                    <div>
+                      <h4 className="text-lg font-medium mb-3 flex items-center">
+                        <LinkIcon className="h-5 w-5 mr-2" />
+                        Web Resources
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {linkResources.map(resource => (
+                          <ResourceCard 
+                            key={resource.id} 
+                            resource={resource} 
+                            type="link"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -241,6 +328,71 @@ const SubjectView = () => {
         </Tabs>
       </div>
     </DashboardLayout>
+  );
+};
+
+// Resource Card Component
+interface ResourceCardProps {
+  resource: Resource;
+  type: 'video' | 'document' | 'link';
+}
+
+const ResourceCard: React.FC<ResourceCardProps> = ({ resource, type }) => {
+  const getLevelColor = (level: string) => {
+    switch (level) {
+      case 'beginner':
+        return 'bg-green-100 text-green-800';
+      case 'intermediate':
+        return 'bg-blue-100 text-blue-800';
+      case 'advanced':
+        return 'bg-purple-100 text-purple-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getTypeIcon = () => {
+    switch (type) {
+      case 'video':
+        return <Video className="h-4 w-4" />;
+      case 'document':
+        return <FileText className="h-4 w-4" />;
+      case 'link':
+        return <LinkIcon className="h-4 w-4" />;
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-base font-medium">{resource.title}</CardTitle>
+          <div className={`px-2 py-1 rounded-full text-xs ${getLevelColor(resource.level)}`}>
+            {resource.level}
+          </div>
+        </div>
+        <CardDescription>{resource.description || `${type} resource on ${resource.topic}`}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col space-y-2">
+          <div className="flex items-center text-sm text-gray-500">
+            <span className="font-medium mr-2">Topic:</span> {resource.topic}
+          </div>
+          
+          <div className="mt-2">
+            <a
+              href={resource.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center text-edu-primary hover:underline"
+            >
+              {getTypeIcon()}
+              <span className="ml-1">Access Resource</span>
+            </a>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 

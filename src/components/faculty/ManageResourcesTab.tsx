@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -14,9 +13,10 @@ import { useAppContext } from '@/lib/context';
 
 interface ManageResourcesTabProps {
   selectedSubject: string | null;
+  onResourceAdded?: () => void;
 }
 
-const ManageResourcesTab: React.FC<ManageResourcesTabProps> = ({ selectedSubject }) => {
+const ManageResourcesTab: React.FC<ManageResourcesTabProps> = ({ selectedSubject, onResourceAdded }) => {
   const { addResource, subjects } = useAppContext();
   const [resourceTitle, setResourceTitle] = useState('');
   const [resourceUrl, setResourceUrl] = useState('');
@@ -68,6 +68,11 @@ const ManageResourcesTab: React.FC<ManageResourcesTabProps> = ({ selectedSubject
       title: "Success",
       description: "Resource added successfully"
     });
+
+    // Call the onResourceAdded callback if provided
+    if (onResourceAdded) {
+      onResourceAdded();
+    }
 
     // Reset form
     setResourceTitle('');
