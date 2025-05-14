@@ -4,16 +4,16 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
+import { Subject } from '@/lib/interfaces/types';
 
 interface SubjectCardProps {
-  id: string;
-  name: string;
-  semesterId: number;
-  noteCount: number;
+  subject: Subject;
 }
 
-const SubjectCard = ({ id, name, semesterId, noteCount }: SubjectCardProps) => {
+const SubjectCard = ({ subject }: SubjectCardProps) => {
   const navigate = useNavigate();
+  const { id, name, semesterId, notes } = subject;
+  const noteCount = notes.length;
   
   const handleClick = () => {
     navigate(`/semester/${semesterId}/subject/${id}`);

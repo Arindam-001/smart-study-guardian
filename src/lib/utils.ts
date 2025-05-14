@@ -1,8 +1,6 @@
-
 import { type ClassValue, clsx } from "clsx"
 import { twMerge } from "tailwind-merge"
-import { Note, Resource } from "./interfaces/types"
-import { PlagiarismDetail } from "./interfaces/assignment"
+import { Note, Resource, PlagiarismDetail } from "./interfaces/types"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))

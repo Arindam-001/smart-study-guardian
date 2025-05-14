@@ -1,4 +1,3 @@
-
 export type UserRole = 'student' | 'teacher' | 'admin';
 export type ResourceLevel = 'beginner' | 'intermediate' | 'advanced';
 
@@ -83,6 +82,7 @@ export interface StudentPerformance {
 
 export interface PlagiarismDetail {
   noteId: string;
+  noteName?: string; // Make noteName optional since it's not in all usages
   matchedText: string;
   similarity: number;
 }

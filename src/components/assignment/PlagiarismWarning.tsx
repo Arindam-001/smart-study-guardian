@@ -1,8 +1,7 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { PlagiarismDetail } from '@/lib/interfaces/assignment';
+import { PlagiarismDetail } from '@/lib/interfaces/types';
 import { AlertTriangle } from 'lucide-react';
 
 interface PlagiarismWarningProps {
