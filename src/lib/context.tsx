@@ -11,6 +11,13 @@ import { signUp as authSignUp } from './auth/user-management';
 import { clearAllOTPData } from './auth/password-reset';
 import { checkPlagiarism } from './utils';
 
+// Add the missing PlagiarismDetail interface if it doesn't exist elsewhere
+interface PlagiarismDetail {
+  noteId: string;
+  matchedText: string;
+  similarity: number;
+}
+
 // Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
@@ -556,5 +563,3 @@ export const useAppContext = () => {
 
 // Re-export the types from interfaces for components to use
 export type { Question, Note, User, Assignment, StudentPerformance, Resource };
-
-</edits_to_apply>

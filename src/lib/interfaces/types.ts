@@ -80,3 +80,9 @@ export interface StudentPerformance {
   topics: Record<string, { correct: number; total: number }>;
   recommendedResources: Resource[];
 }
+
+export interface PlagiarismDetail {
+  noteId: string;
+  matchedText: string;
+  similarity: number;
+}
