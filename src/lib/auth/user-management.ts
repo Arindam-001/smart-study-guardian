@@ -1,6 +1,5 @@
-
 import { User, UserRole } from '../interfaces/types';
-import { getItem, setItem, STORAGE_KEYS } from '../local-storage';
+import { getItem, setItem, removeItem, STORAGE_KEYS } from '../local-storage';
 import { supabase } from '../supabase';
 import { getSemesterCountByProgram } from '../auth-service';
 
