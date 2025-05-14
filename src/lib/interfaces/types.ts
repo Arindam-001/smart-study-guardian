@@ -48,8 +48,10 @@ export interface Resource {
 export interface Question {
   id: string;
   text: string;
-  options?: string[];
+  options?: Array<{ id: string, text: string }> | string[];
+  correctOptionId?: string;
   correctAnswer?: string;
+  explanation?: string;
   type: 'text' | 'multiple-choice';
   topic?: string;
 }

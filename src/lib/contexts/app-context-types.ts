@@ -6,13 +6,22 @@ export interface AppContextType {
   user: User | null;
   users: User[];
   isAuthenticated: boolean;
-  login: (email: string, password: string) => User | null;
-  logout: () => void;
-  registerUser: (userData: Omit<User, 'id'>) => User;
+  login: (email: string, password: string) => Promise<boolean> | User | null;
+  logout: () => void | Promise<void>;
+  registerUser: (userData: Omit<User, 'id'> | {
+    name: string;
+    email: string;
+    password: string;
+    id: string;
+    role: string;
+    currentSemester?: number;
+    phone?: string;
+    enrolledCourse?: string;
+  }) => User | Promise<boolean>;
   subjects: Subject[];
   addSubject: (subject: Omit<Subject, 'id'>) => Subject;
   updateSubjects: (subjects: Subject[]) => void;
-  addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt'>) => Note;
+  addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt'>) => void | Note;
   deleteNote: (subjectId: string, noteId: string) => void;
   addResource: (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => Resource;
   deleteResource: (subjectId: string, resourceId: string) => void;

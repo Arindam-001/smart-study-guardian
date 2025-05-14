@@ -21,8 +21,8 @@ export const useSubjectFunctions = (
     setSubjects(subjects);
   };
 
-  // Add note function
-  const addNote = (subjectId: string, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): void => {
+  // Add note function - modified to return the new Note
+  const addNote = (subjectId: string, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>): Note => {
     const newNote: Note = {
       ...note,
       id: `note_${Date.now()}`,
@@ -37,6 +37,8 @@ export const useSubjectFunctions = (
           : subject
       )
     );
+    
+    return newNote; // Now we return the newly created note
   };
 
   // Delete note function

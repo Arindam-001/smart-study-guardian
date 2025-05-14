@@ -25,7 +25,13 @@ const ManageNotesTab: React.FC<ManageNotesTabProps> = ({ notes, selectedSubject,
 
   const handleAddNote = (title: string, content: string) => {
     if (selectedSubject) {
-      addNote(selectedSubject, { title, content });
+      // Include updatedAt in the note object
+      addNote(selectedSubject, { 
+        title, 
+        content,
+        updatedAt: new Date() 
+      });
+      
       setShowAddNote(false);
       if (onNoteAdded) {
         onNoteAdded();

@@ -25,7 +25,13 @@ const AddNoteForm = ({ subjectId, onComplete }: AddNoteFormProps) => {
     setIsLoading(true);
 
     try {
-      addNote(subjectId, { title, content });
+      // Include updatedAt in the note object to satisfy TypeScript
+      addNote(subjectId, { 
+        title, 
+        content,
+        updatedAt: new Date() // Add the required updatedAt property
+      });
+      
       toast({
         title: 'Note Added',
         description: 'The note has been added successfully.',

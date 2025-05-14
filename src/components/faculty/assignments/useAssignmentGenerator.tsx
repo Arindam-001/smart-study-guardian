@@ -63,7 +63,8 @@ const generateQuestionsFromContent = (content: string[], count: number): Questio
       text: questionText,
       options,
       correctOptionId: options[0].id, // First option as correct by default
-      explanation: `This question tests understanding of ${keyword}.`
+      explanation: `This question tests understanding of ${keyword}.`,
+      type: 'multiple-choice', // Add type property to satisfy Question interface
     });
   }
   
@@ -202,9 +203,9 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
     title,
     setTitle,
     selectedNotes,
-    selectedNotes,
+    setSelectedNotes, // Fixed duplicate property
     selectedResources,
-    selectedResources,
+    setSelectedResources, // Fixed duplicate property
     dueDate,
     setDueDate,
     enableProctoring,
