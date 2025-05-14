@@ -1,5 +1,6 @@
 
 import { User } from './types';
+import { PlagiarismDetail } from './types';
 
 export interface AssignmentSubmission {
   id: string;
@@ -13,4 +14,6 @@ export interface AssignmentSubmission {
   status: 'pending' | 'graded' | 'late';
   feedback?: string;
   user?: User;  // Optional reference to the student
+  plagiarismScore?: number; // Adding plagiarism score property
+  plagiarismDetails?: PlagiarismDetail[]; // Adding plagiarism details property
 }
