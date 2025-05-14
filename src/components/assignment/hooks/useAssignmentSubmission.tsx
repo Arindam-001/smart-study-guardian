@@ -11,6 +11,7 @@ interface UseAssignmentSubmissionProps {
   file: File | null;
   streamRef: React.MutableRefObject<MediaStream | null>;
   createWarning: (reason: string) => void;
+  onSubmitComplete?: () => void; // New callback for when submission is complete
 }
 
 export const useAssignmentSubmission = ({
@@ -18,7 +19,8 @@ export const useAssignmentSubmission = ({
   answers,
   file,
   streamRef,
-  createWarning
+  createWarning,
+  onSubmitComplete
 }: UseAssignmentSubmissionProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -94,6 +96,13 @@ export const useAssignmentSubmission = ({
           description: `Your assignment has been sent to your teacher for review.`,
           variant: "default"
         });
+        
+        // Call the completion callback after a delay to allow the user to see results
+        if (onSubmitComplete) {
+          setTimeout(() => {
+            onSubmitComplete();
+          }, 5000);
+        }
       } catch (error) {
         toast({
           title: "Error",

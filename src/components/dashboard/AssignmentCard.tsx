@@ -1,10 +1,12 @@
 
-import React from 'react';
-import { FileText, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { FileText, Calendar, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Assignment } from '@/lib/interfaces/types';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
+import { useAppContext } from '@/lib/context';
+import { getItem, STORAGE_KEYS } from '@/lib/local-storage';
 
 interface AssignmentCardProps {
   assignment: Assignment;
@@ -20,13 +22,42 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({
   navigateToAssignment
 }) => {
   const { toast } = useToast();
+  const { user, submissions } = useAppContext();
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   
   // Format the due date nicely
   const formattedDueDate = format(assignment.dueDate, "PPP 'at' p");
   
+  // Check if the current user has already submitted this assignment
+  useEffect(() => {
+    if (user && submissions) {
+      const submitted = submissions.some(
+        sub => sub.assignmentId === assignment.id && sub.studentId === user.id
+      );
+      setHasSubmitted(submitted);
+    }
+  }, [user, submissions, assignment.id]);
+  
   const handleOpenAssignment = () => {
+    if (hasSubmitted) {
+      toast({
+        title: "Already submitted",
+        description: "You have already submitted this assignment."
+      });
+      return;
+    }
+    
+    // Get the current auth user to pass to the new tab
+    const authUser = getItem(STORAGE_KEYS.AUTH_USER, null);
+    
     // Open the assignment in a new tab
-    window.open(`/semester/${semesterId}/subject/${subjectId}?tab=assignments&assignmentId=${assignment.id}&mode=take`, '_blank');
+    const url = `/semester/${semesterId}/subject/${subjectId}?tab=assignments&assignmentId=${assignment.id}&mode=take`;
+    window.open(url, '_blank');
+    
+    // Store auth data in session storage for the new tab
+    if (authUser) {
+      sessionStorage.setItem('TEMP_AUTH_USER', JSON.stringify(authUser));
+    }
     
     toast({
       title: "Assignment opened",
@@ -50,10 +81,18 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({
         </div>
       </div>
       <Button 
-        className="bg-edu-primary" 
+        className={hasSubmitted ? "bg-green-600" : "bg-edu-primary"}
         onClick={handleOpenAssignment}
+        disabled={hasSubmitted}
       >
-        Take Assignment
+        {hasSubmitted ? (
+          <div className="flex items-center gap-1">
+            <CheckCircle className="h-4 w-4 mr-1" />
+            Submitted
+          </div>
+        ) : (
+          "Take Assignment"
+        )}
       </Button>
     </div>
   );

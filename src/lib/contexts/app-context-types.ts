@@ -1,45 +1,49 @@
 
-import { User, Subject, Note, Resource, Assignment, Warning, StudentPerformance } from '../interfaces/types';
-import { AssignmentSubmission } from '../interfaces/assignment';
+import { User, UserRole, Subject, Note, Resource, Assignment, Warning, StudentPerformance } from '@/lib/interfaces/types';
+import { AssignmentSubmission } from '@/lib/interfaces/assignment';
 
+// Define the shape of the application context
 export interface AppContextType {
+  // User state and authentication
   user: User | null;
+  setUser: React.Dispatch<React.SetStateAction<User | null>>; // Added setUser function
   users: User[];
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean> | User | null;
-  logout: () => void | Promise<void>;
-  registerUser: (userData: Omit<User, 'id'> | {
-    name: string;
-    email: string;
-    password: string;
-    id: string;
-    role: string;
-    currentSemester?: number;
-    phone?: string;
-    enrolledCourse?: string;
-  }) => User | Promise<boolean>;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
+  registerUser: (userData: Omit<User, "id"> | { name: string; email: string; password: string; id: string; role: string; currentSemester?: number; phone?: string; enrolledCourse?: string; }) => Promise<boolean>;
+
+  // Subject management
   subjects: Subject[];
-  addSubject: (subject: Omit<Subject, 'id'>) => Subject;
-  updateSubjects: (subjects: Subject[]) => void;
-  addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt'>) => void | Note;
-  deleteNote: (subjectId: string, noteId: string) => void;
-  addResource: (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => Resource;
-  deleteResource: (subjectId: string, resourceId: string) => void;
+  addSubject: (name: string, semesterId: number, description?: string) => Subject;
+  updateSubjects: (newSubjects: Subject[]) => void;
+  addNote: (subjectId: string, title: string, content: string) => string;
+  deleteNote: (subjectId: string, noteId: string) => boolean;
+  addResource: (subjectId: string, title: string, url: string, type: string) => string;
+  deleteResource: (subjectId: string, resourceId: string) => boolean;
+  assignTeacher: (subjectId: string, teacherId: string) => boolean;
+  unassignTeacher: (subjectId: string) => boolean;
+
+  // Assignment management
   createAssignment: (subjectId: string, title: string, dueDate?: Date, duration?: number, selectedNotes?: Note[], selectedResources?: Resource[]) => Assignment;
   deleteAssignment: (assignmentId: string) => boolean;
   submitAssignment: (assignmentId: string, studentId: string, answers: Record<string, string>, fileUrl?: string) => any;
-  addWarning: (studentId: string, assignmentId: string, reason: string) => void;
-  warnings: Warning[];
-  grantSemesterAccess: (studentId: string, semesterId: number) => void;
-  semesters: number[];
-  updateAttendance: (studentId: string, subjectId: string, date: string, present: boolean) => void;
-  getStudentPerformance: (studentId: string) => StudentPerformance[];
-  studentPerformance: StudentPerformance[];
   assignments: Assignment[];
-  submissions: AssignmentSubmission[];
   getSubmissionsByAssignment: (assignmentId: string) => AssignmentSubmission[];
   getSubmissionsByStudent: (studentId: string) => AssignmentSubmission[];
+  
+  // Warning and notification
+  addWarning: (studentId: string, assignmentId: string, reason: string) => Warning;
+  warnings: Warning[];
+  
+  // Student management
+  grantSemesterAccess: (studentId: string, semesterId: number) => boolean;
+  updateAttendance: (studentId: string, subjectId: string, present: boolean, date?: Date) => boolean;
+  getStudentPerformance: (studentId: string) => StudentPerformance | undefined;
+  
+  // Data management
+  semesters: number[];
+  studentPerformance: StudentPerformance[];
+  submissions: AssignmentSubmission[];
   clearAllUserData: () => boolean;
-  assignTeacher: (subjectId: string, teacherId: string) => void;
-  unassignTeacher: (subjectId: string) => void;
 }

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { User, UserRole, Subject, Note, Resource, Assignment, Warning, StudentPerformance } from '@/lib/interfaces/types';
 import { AssignmentSubmission } from '@/lib/interfaces/assignment';
@@ -25,7 +24,26 @@ export const useAppContext = () => {
 export const AppProvider = ({ children }: { children: ReactNode }) => {
   // State declarations
   const [user, setUser] = useState<User | null>(() => {
-    return getItem<User | null>(STORAGE_KEYS.AUTH_USER, null);
+    // Check both local storage and session storage
+    const localUser = getItem<User | null>(STORAGE_KEYS.AUTH_USER, null);
+    if (localUser) return localUser;
+    
+    // Try to get from session storage
+    try {
+      const sessionUser = sessionStorage.getItem('TEMP_AUTH_USER');
+      if (sessionUser) {
+        const parsedUser = JSON.parse(sessionUser);
+        // Move to local storage for persistence
+        setItem(STORAGE_KEYS.AUTH_USER, parsedUser);
+        // Clean up session storage
+        sessionStorage.removeItem('TEMP_AUTH_USER');
+        return parsedUser;
+      }
+    } catch (err) {
+      console.error('Error parsing session user:', err);
+    }
+    
+    return null;
   });
   const [usersList, setUsers] = useState<User[]>(() => {
     return getItem<User[]>(STORAGE_KEYS.USERS, []);
@@ -115,6 +133,7 @@ export const AppProvider = ({ children }: { children: ReactNode }) => {
   // Context value
   const contextValue: AppContextType = {
     user,
+    setUser, // Expose setUser to components
     users: usersList,
     isAuthenticated: !!user,
     login,

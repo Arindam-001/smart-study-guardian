@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
@@ -29,6 +28,28 @@ const SubjectView = () => {
   const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [showTakeAssignment, setShowTakeAssignment] = useState(modeParam === 'take');
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(assignmentIdParam);
+  
+  // Listen for messages from popup windows
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'ASSIGNMENT_SUBMITTED') {
+        // Force refresh the component when an assignment is submitted in another tab
+        console.log('Received assignment submission message:', event.data);
+        // Redirect to dashboard if assignment was completed
+        if (modeParam === 'take') {
+          navigate('/dashboard');
+        } else {
+          // Just refresh the current view
+          window.location.reload();
+        }
+      }
+    };
+    
+    window.addEventListener('message', handleMessage);
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [navigate, modeParam]);
   
   // Update URL without triggering a full page reload
   const updateUrlParams = useCallback((tab: string, assignmentId?: string | null) => {
@@ -107,9 +128,9 @@ const SubjectView = () => {
       // If opened in a new tab, close the window after submission
       window.close();
       // Fallback if window.close() doesn't work (many browsers block it)
-      setShowTakeAssignment(false);
-      setSelectedAssignmentId(null);
-      updateUrlParams('assignments');
+      setTimeout(() => {
+        navigate('/dashboard');
+      }, 500);
     } else {
       // Regular flow for same-window operation
       setShowTakeAssignment(false);
