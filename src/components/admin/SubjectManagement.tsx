@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { Plus, Edit2, Trash } from 'lucide-react';
 
 interface SubjectManagementProps {
@@ -31,8 +31,8 @@ const SubjectManagement: React.FC<SubjectManagementProps> = ({ semesterId }) => 
     ? subjects.filter(s => s.semesterId === semesterId)
     : subjects;
 
-  // Get all teachers
-  const teachers = users.filter(u => u.role === 'teacher');
+  // Get all teachers - make sure we're properly filtering by role
+  const teachers = users.filter(user => user.role === 'teacher');
 
   const handleAddSubject = () => {
     if (!newSubjectName.trim()) {
@@ -150,7 +150,7 @@ const SubjectManagement: React.FC<SubjectManagementProps> = ({ semesterId }) => 
                 <TableCell className="font-medium">{subject.name}</TableCell>
                 <TableCell>Semester {subject.semesterId}</TableCell>
                 <TableCell>
-                  {users.find(u => u.id === subject.teacherId)?.name || 'Unassigned'}
+                  {subject.teacherId && users.find(u => u.id === subject.teacherId)?.name || 'Unassigned'}
                 </TableCell>
                 <TableCell>{subject.resources?.length || 0} resources</TableCell>
                 <TableCell className="space-x-2">
@@ -309,7 +309,7 @@ const SubjectManagement: React.FC<SubjectManagementProps> = ({ semesterId }) => 
                   <SelectItem value="">Unassigned</SelectItem>
                   {teachers.map(teacher => (
                     <SelectItem key={teacher.id} value={teacher.id}>
-                      {teacher.name}
+                      {teacher.name || `Teacher ${teacher.id}`}
                     </SelectItem>
                   ))}
                 </SelectContent>

@@ -7,13 +7,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { UserCheck, BookOpen, AlertTriangle, ShieldAlert, User, Users, Trash2, LogOut } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
+import { UserCheck, BookOpen, AlertTriangle, ShieldAlert, User, Users, Trash2 } from 'lucide-react';
 import SubjectManagement from '@/components/admin/SubjectManagement';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { supabase } from '@/lib/supabase';
 import { deleteUser } from '@/lib/auth/user-management';
-import { getItem, setItem, STORAGE_KEYS } from '@/lib/local-storage';
 import { impersonateUser } from '@/lib/auth/auth-core';
 
 const AdminDashboard = () => {
@@ -24,7 +22,6 @@ const AdminDashboard = () => {
     warnings, 
     semesters, 
     grantSemesterAccess,
-    clearAllUserData,
   } = useAppContext();
   
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
@@ -83,6 +80,7 @@ const AdminDashboard = () => {
     }
   };
 
+  // Make sure we're correctly filtering users by role
   const studentUsers = users.filter(u => u.role === 'student');
   const facultyUsers = users.filter(u => u.role === 'teacher');
 
@@ -164,45 +162,53 @@ const AdminDashboard = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {studentUsers.map(student => (
-                          <TableRow key={student.id}>
-                            <TableCell className="font-medium">{student.id}</TableCell>
-                            <TableCell>{student.name}</TableCell>
-                            <TableCell>{student.email}</TableCell>
-                            <TableCell>{student.enrolledCourse || 'N/A'}</TableCell>
-                            <TableCell>{student.currentSemester}</TableCell>
-                            <TableCell className="space-x-2">
-                              <Button size="sm" onClick={() => goToUserDashboard(student.id, 'student')}>
-                                View
-                              </Button>
-                              
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="destructive" size="sm" onClick={() => setUserToDelete(student.id)}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Delete Student</DialogTitle>
-                                  </DialogHeader>
-                                  <p>Are you sure you want to delete {student.name}?</p>
-                                  <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
-                                  <DialogFooter>
-                                    <Button variant="outline" onClick={() => setUserToDelete(null)}>Cancel</Button>
-                                    <Button 
-                                      variant="destructive" 
-                                      onClick={() => handleDeleteUser(student.id)}
-                                      disabled={isDeleting}
-                                    >
-                                      {isDeleting ? "Deleting..." : "Delete Student"}
+                        {studentUsers.length > 0 ? (
+                          studentUsers.map(student => (
+                            <TableRow key={student.id}>
+                              <TableCell className="font-medium">{student.id}</TableCell>
+                              <TableCell>{student.name}</TableCell>
+                              <TableCell>{student.email}</TableCell>
+                              <TableCell>{student.enrolledCourse || 'N/A'}</TableCell>
+                              <TableCell>{student.currentSemester}</TableCell>
+                              <TableCell className="space-x-2">
+                                <Button size="sm" onClick={() => goToUserDashboard(student.id, 'student')}>
+                                  View
+                                </Button>
+                                
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" onClick={() => setUserToDelete(student.id)}>
+                                      <Trash2 className="h-4 w-4" />
                                     </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Delete Student</DialogTitle>
+                                    </DialogHeader>
+                                    <p>Are you sure you want to delete {student.name}?</p>
+                                    <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+                                    <DialogFooter>
+                                      <Button variant="outline" onClick={() => setUserToDelete(null)}>Cancel</Button>
+                                      <Button 
+                                        variant="destructive" 
+                                        onClick={() => handleDeleteUser(student.id)}
+                                        disabled={isDeleting}
+                                      >
+                                        {isDeleting ? "Deleting..." : "Delete Student"}
+                                      </Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-4">
+                              No students found
                             </TableCell>
                           </TableRow>
-                        ))}
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -221,46 +227,54 @@ const AdminDashboard = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {facultyUsers.map(faculty => (
-                          <TableRow key={faculty.id}>
-                            <TableCell className="font-medium">{faculty.id}</TableCell>
-                            <TableCell>{faculty.name}</TableCell>
-                            <TableCell>{faculty.email}</TableCell>
-                            <TableCell>
-                              {subjects.filter(s => s.teacherId === faculty.id).map(s => s.name).join(', ')}
-                            </TableCell>
-                            <TableCell className="space-x-2">
-                              <Button size="sm" onClick={() => goToUserDashboard(faculty.id, 'teacher')}>
-                                View
-                              </Button>
-                              
-                              <Dialog>
-                                <DialogTrigger asChild>
-                                  <Button variant="destructive" size="sm" onClick={() => setUserToDelete(faculty.id)}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent>
-                                  <DialogHeader>
-                                    <DialogTitle>Delete Faculty Member</DialogTitle>
-                                  </DialogHeader>
-                                  <p>Are you sure you want to delete {faculty.name}?</p>
-                                  <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
-                                  <DialogFooter>
-                                    <Button variant="outline" onClick={() => setUserToDelete(null)}>Cancel</Button>
-                                    <Button 
-                                      variant="destructive" 
-                                      onClick={() => handleDeleteUser(faculty.id)}
-                                      disabled={isDeleting}
-                                    >
-                                      {isDeleting ? "Deleting..." : "Delete Faculty"}
+                        {facultyUsers.length > 0 ? (
+                          facultyUsers.map(faculty => (
+                            <TableRow key={faculty.id}>
+                              <TableCell className="font-medium">{faculty.id}</TableCell>
+                              <TableCell>{faculty.name}</TableCell>
+                              <TableCell>{faculty.email}</TableCell>
+                              <TableCell>
+                                {subjects.filter(s => s.teacherId === faculty.id).map(s => s.name).join(', ')}
+                              </TableCell>
+                              <TableCell className="space-x-2">
+                                <Button size="sm" onClick={() => goToUserDashboard(faculty.id, 'teacher')}>
+                                  View
+                                </Button>
+                                
+                                <Dialog>
+                                  <DialogTrigger asChild>
+                                    <Button variant="destructive" size="sm" onClick={() => setUserToDelete(faculty.id)}>
+                                      <Trash2 className="h-4 w-4" />
                                     </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
+                                  </DialogTrigger>
+                                  <DialogContent>
+                                    <DialogHeader>
+                                      <DialogTitle>Delete Faculty Member</DialogTitle>
+                                    </DialogHeader>
+                                    <p>Are you sure you want to delete {faculty.name}?</p>
+                                    <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+                                    <DialogFooter>
+                                      <Button variant="outline" onClick={() => setUserToDelete(null)}>Cancel</Button>
+                                      <Button 
+                                        variant="destructive" 
+                                        onClick={() => handleDeleteUser(faculty.id)}
+                                        disabled={isDeleting}
+                                      >
+                                        {isDeleting ? "Deleting..." : "Delete Faculty"}
+                                      </Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={5} className="text-center py-4">
+                              No faculty members found
                             </TableCell>
                           </TableRow>
-                        ))}
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -323,11 +337,15 @@ const AdminDashboard = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="placeholder" disabled>Select a student</SelectItem>
-                    {studentUsers.map(student => (
-                      <SelectItem key={student.id} value={student.id}>
-                        {student.name}
-                      </SelectItem>
-                    ))}
+                    {studentUsers.length > 0 ? (
+                      studentUsers.map(student => (
+                        <SelectItem key={student.id} value={student.id}>
+                          {student.name || `Student ${student.id}`}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-students" disabled>No students found</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -358,6 +376,7 @@ const AdminDashboard = () => {
               <Button 
                 onClick={handleGrantAccess} 
                 className="w-full"
+                disabled={!selectedStudent || !selectedSemester}
               >
                 Grant Access
               </Button>
