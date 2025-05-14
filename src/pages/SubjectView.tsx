@@ -37,9 +37,9 @@ const SubjectView = () => {
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
   }, [navigate, location.pathname]);
   
-  // Effect to handle URL params on initial load and URL changes
+  // Effect to sync URL params with local state
   useEffect(() => {
-    if (tabParam && tabParam !== activeTab) {
+    if (tabParam && ['notes', 'resources', 'assignments'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
     
@@ -49,12 +49,18 @@ const SubjectView = () => {
         setShowTakeAssignment(true);
       }
     }
-  }, [tabParam, assignmentIdParam, activeTab]);
+  }, [tabParam, assignmentIdParam]);
   
   // Handle tab change with the memoized URL updater
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    updateUrlParams(value, value === 'assignments' ? selectedAssignmentId : null);
+    
+    // Update URL params based on selected tab
+    if (value === 'assignments' && selectedAssignmentId) {
+      updateUrlParams(value, selectedAssignmentId);
+    } else {
+      updateUrlParams(value);
+    }
   };
 
   if (!user || !subjectId) {
@@ -74,7 +80,7 @@ const SubjectView = () => {
   return (
     <DashboardLayout title={subject.name}>
       <div className="mb-6">
-        <Tabs defaultValue={activeTab} value={activeTab} onValueChange={handleTabChange}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="notes" className="flex items-center gap-2">
               <BookOpen size={16} />
