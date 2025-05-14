@@ -35,7 +35,17 @@ const SubjectView = () => {
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
   }, [navigate, location.pathname]);
 
-  // Sync URL params with state
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    if (value === 'assignments' && selectedAssignmentId) {
+      updateUrlParams(value, selectedAssignmentId);
+    } else {
+      updateUrlParams(value);
+    }
+  };
+
+  // Sync URL params with state when URL changes
   useEffect(() => {
     const validTabs = ['notes', 'resources', 'assignments'];
     if (tabParam && validTabs.includes(tabParam)) {
@@ -49,15 +59,6 @@ const SubjectView = () => {
       }
     }
   }, [tabParam, assignmentIdParam]);
-
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-    if (value === 'assignments' && selectedAssignmentId) {
-      updateUrlParams(value, selectedAssignmentId);
-    } else {
-      updateUrlParams(value);
-    }
-  };
 
   if (!user || !subjectId) {
     navigate('/');
@@ -75,7 +76,7 @@ const SubjectView = () => {
   return (
     <DashboardLayout title={subject.name}>
       <div className="mb-6">
-        <Tabs defaultValue={activeTab} onValueChange={handleTabChange}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="notes" className="flex items-center gap-2">
               <BookOpen size={16} />
