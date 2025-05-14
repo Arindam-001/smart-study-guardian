@@ -34,15 +34,22 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 // Role-protected route wrapper component
 const RoleProtectedRoute = ({ 
   children, 
-  allowedRoles 
+  allowedRoles,
+  adminBypass = true
 }: { 
   children: JSX.Element;
   allowedRoles: string[];
+  adminBypass?: boolean;
 }) => {
   const { isAuthenticated, user } = useAppContext();
   
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
+  }
+  
+  // Admin bypass - admins can access any route
+  if (adminBypass && user && user.role === 'admin') {
+    return children;
   }
   
   if (!user || !allowedRoles.includes(user.role)) {
@@ -86,7 +93,7 @@ const AppRoutes = () => {
       <Route 
         path="/student-dashboard" 
         element={
-          <RoleProtectedRoute allowedRoles={['student', 'admin']}>
+          <RoleProtectedRoute allowedRoles={['student']}>
             <StudentDashboard />
           </RoleProtectedRoute>
         } 
@@ -95,7 +102,7 @@ const AppRoutes = () => {
       <Route 
         path="/faculty-dashboard" 
         element={
-          <RoleProtectedRoute allowedRoles={['teacher', 'admin']}>
+          <RoleProtectedRoute allowedRoles={['teacher']}>
             <FacultyDashboard />
           </RoleProtectedRoute>
         } 
@@ -104,7 +111,7 @@ const AppRoutes = () => {
       <Route 
         path="/admin-dashboard" 
         element={
-          <RoleProtectedRoute allowedRoles={['admin']}>
+          <RoleProtectedRoute allowedRoles={['admin']} adminBypass={false}>
             <AdminDashboard />
           </RoleProtectedRoute>
         } 
@@ -125,11 +132,11 @@ const AppRoutes = () => {
         element={<ProtectedRoute><Notifications /></ProtectedRoute>} 
       />
       
-      {/* Additional routes for navigation tabs */}
+      {/* Additional routes for navigation tabs - now accessible by admins */}
       <Route 
         path="/students" 
         element={
-          <RoleProtectedRoute allowedRoles={['teacher', 'admin']}>
+          <RoleProtectedRoute allowedRoles={['teacher']}>
             <FacultyDashboard />
           </RoleProtectedRoute>
         } 

@@ -8,6 +8,8 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/lib/context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { validateEmailDomain, getSemesterCountByProgram } from '@/lib/auth-service';
+import { supabase } from '@/lib/supabase';
 
 export const RegisterForm = () => {
   const [name, setName] = useState('');
@@ -19,8 +21,9 @@ export const RegisterForm = () => {
   const [role, setRole] = useState<'student' | 'teacher' | 'admin'>('student');
   const [currentSemester, setCurrentSemester] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [maxSemesters, setMaxSemesters] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8]);
   const { toast } = useToast();
-  const { registerUser, semesters } = useAppContext();
+  const { registerUser } = useAppContext();
   const navigate = useNavigate();
 
   const validateEmail = (email: string) => {
@@ -34,6 +37,33 @@ export const RegisterForm = () => {
     return phoneRegex.test(phone);
   };
 
+  const handleEnrolledCourseChange = (course: string) => {
+    setEnrolledCourse(course);
+    
+    if (course && role === 'student') {
+      const semCount = getSemesterCountByProgram(course);
+      setMaxSemesters(Array.from({ length: semCount }, (_, i) => i + 1));
+      
+      // Reset current semester if it's higher than the new max
+      if (currentSemester > semCount) {
+        setCurrentSemester(1);
+      }
+    }
+  };
+
+  const handleRoleChange = (newRole: 'student' | 'teacher' | 'admin') => {
+    setRole(newRole);
+    
+    // Reset domain-specific fields when changing role
+    setEmail('');
+    
+    if (newRole === 'student' && enrolledCourse) {
+      // Update semesters based on enrolled course
+      const semCount = getSemesterCountByProgram(enrolledCourse);
+      setMaxSemesters(Array.from({ length: semCount }, (_, i) => i + 1));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -43,6 +73,17 @@ export const RegisterForm = () => {
       toast({
         title: "Invalid email",
         description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    // Domain validation
+    if (!validateEmailDomain(email, role)) {
+      toast({
+        title: "Invalid email domain",
+        description: `${role === 'admin' ? 'Administrators' : role === 'teacher' ? 'Faculty' : 'Students'} must use ${role === 'admin' ? '@admin.com' : role === 'teacher' ? '@faculty.com' : '@college.com'} email domain`,
         variant: "destructive"
       });
       setIsLoading(false);
@@ -82,6 +123,35 @@ export const RegisterForm = () => {
         phone,
         enrolledCourse: role === 'student' ? enrolledCourse : undefined
       };
+      
+      // Try to persist to Supabase if available
+      try {
+        // First try to create auth user
+        const { error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        
+        if (!authError) {
+          // Then create user in our users table
+          await supabase.from('users').insert({
+            id,
+            name,
+            email,
+            role,
+            current_semester: role === 'student' ? currentSemester : 0,
+            accessible_semesters: role === 'student' ? 
+              Array.from({ length: maxSemesters.length }, (_, i) => i + 1) : 
+              [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+            enrolled_course: role === 'student' ? enrolledCourse : null
+          });
+          
+          console.log('User registered in database');
+        }
+      } catch (dbError) {
+        console.log('Database storage failed, falling back to local storage', dbError);
+        // If database fails, continue with local storage approach
+      }
       
       const success = await registerUser(
         userData.name, 
@@ -144,12 +214,17 @@ export const RegisterForm = () => {
             <Label htmlFor="email">Email</Label>
             <Input
               id="email"
-              placeholder="your.email@gmail.com"
+              placeholder={role === 'admin' ? "your.email@admin.com" : role === 'teacher' ? "your.email@faculty.com" : "your.email@college.com"}
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
+            <p className="text-xs text-muted-foreground">
+              {role === 'admin' ? "Admins must use @admin.com email domain" : 
+               role === 'teacher' ? "Faculty must use @faculty.com email domain" : 
+               "Students must use @college.com email domain"}
+            </p>
           </div>
 
           <div className="space-y-2">
@@ -193,7 +268,7 @@ export const RegisterForm = () => {
             <Label htmlFor="role">Role</Label>
             <Select 
               value={role} 
-              onValueChange={(value) => setRole(value as 'student' | 'teacher' | 'admin')}
+              onValueChange={(value) => handleRoleChange(value as 'student' | 'teacher' | 'admin')}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select role" />
@@ -212,11 +287,12 @@ export const RegisterForm = () => {
                 <Label htmlFor="enrolled-course">Enrolled Course</Label>
                 <Input
                   id="enrolled-course"
-                  placeholder="e.g., Computer Science, Electrical Engineering"
+                  placeholder="e.g., B.Tech, BCA, MBBS, B.Sc"
                   value={enrolledCourse}
-                  onChange={(e) => setEnrolledCourse(e.target.value)}
+                  onChange={(e) => handleEnrolledCourseChange(e.target.value)}
                   required
                 />
+                <p className="text-xs text-muted-foreground">Course name determines available semesters</p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="semester">Current Semester</Label>
@@ -228,13 +304,14 @@ export const RegisterForm = () => {
                     <SelectValue placeholder="Select semester" />
                   </SelectTrigger>
                   <SelectContent>
-                    {semesters.map(semester => (
+                    {maxSemesters.map(semester => (
                       <SelectItem key={semester} value={semester.toString()}>
                         Semester {semester}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                <p className="text-xs text-muted-foreground">Total semesters: {maxSemesters.length}</p>
               </div>
             </>
           )}

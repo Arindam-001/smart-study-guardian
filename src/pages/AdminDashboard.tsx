@@ -9,8 +9,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { UserCheck, BookOpen, AlertTriangle, ShieldAlert, User, Users } from 'lucide-react';
+import { UserCheck, BookOpen, AlertTriangle, ShieldAlert, User, Users, Trash2, LogOut } from 'lucide-react';
 import SubjectManagement from '@/components/admin/SubjectManagement';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { supabase } from '@/lib/supabase';
 
 const AdminDashboard = () => {
   const { 
@@ -19,27 +21,15 @@ const AdminDashboard = () => {
     subjects, 
     warnings, 
     semesters, 
-    grantSemesterAccess
+    grantSemesterAccess,
+    clearAllUserData,
   } = useAppContext();
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const { toast } = useToast();
   
-  if (!user || user.role !== 'admin') {
-    return (
-      <DashboardLayout title="Admin Dashboard">
-        <Card>
-          <CardContent className="py-10">
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-red-500">Access Denied</h2>
-              <p className="mt-2">You do not have access to the admin dashboard.</p>
-            </div>
-          </CardContent>
-        </Card>
-      </DashboardLayout>
-    );
-  }
-
   const handleGrantAccess = () => {
     if (!selectedStudent || !selectedSemester) {
       toast({
@@ -58,8 +48,55 @@ const AdminDashboard = () => {
     });
   };
 
+  const handleDeleteUser = async (userId: string) => {
+    setIsDeleting(true);
+    
+    try {
+      // First try to delete from database if connected
+      try {
+        await supabase.from('users').delete().eq('id', userId);
+      } catch (dbError) {
+        console.log('Database deletion failed, falling back to local deletion', dbError);
+      }
+      
+      // Remove from context/local storage by recreating the users array without the deleted user
+      const updatedUsers = users.filter(u => u.id !== userId);
+      
+      // We need to update the context's users array - let's create a temporary solution
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('USERS', JSON.stringify(updatedUsers));
+        
+        // Force reload to update the context
+        window.location.reload();
+      }
+      
+      toast({
+        title: "User Deleted",
+        description: "The user has been successfully removed from the system."
+      });
+      
+      setUserToDelete(null);
+    } catch (error) {
+      console.error("Error deleting user:", error);
+      toast({
+        title: "Deletion Failed",
+        description: "An error occurred while trying to delete the user.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const studentUsers = users.filter(u => u.role === 'student');
   const facultyUsers = users.filter(u => u.role === 'teacher');
+
+  // Admin should have access to all dashboards
+  const goToUserDashboard = (userId: string, role: string) => {
+    // In a real app, this would handle impersonation logic
+    // For now, we just navigate to the dashboard with the user ID
+    window.location.href = `/${role === 'student' ? 'student' : 'faculty'}-dashboard?id=${userId}`;
+  };
 
   return (
     <DashboardLayout title="Admin Dashboard">
@@ -110,8 +147,8 @@ const AdminDashboard = () => {
                           <TableHead>ID</TableHead>
                           <TableHead>Name</TableHead>
                           <TableHead>Email</TableHead>
+                          <TableHead>Course</TableHead>
                           <TableHead>Current Semester</TableHead>
-                          <TableHead>Accessible Semesters</TableHead>
                           <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -121,16 +158,37 @@ const AdminDashboard = () => {
                             <TableCell className="font-medium">{student.id}</TableCell>
                             <TableCell>{student.name}</TableCell>
                             <TableCell>{student.email}</TableCell>
+                            <TableCell>{student.enrolledCourse || 'N/A'}</TableCell>
                             <TableCell>{student.currentSemester}</TableCell>
-                            <TableCell>
-                              {student.accessibleSemesters.join(', ')}
-                            </TableCell>
-                            <TableCell>
-                              <Button size="sm" asChild>
-                                <a href={`/student-dashboard?id=${student.id}`}>
-                                  View
-                                </a>
+                            <TableCell className="space-x-2">
+                              <Button size="sm" onClick={() => goToUserDashboard(student.id, 'student')}>
+                                View
                               </Button>
+                              
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="destructive" size="sm" onClick={() => setUserToDelete(student.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Delete Student</DialogTitle>
+                                  </DialogHeader>
+                                  <p>Are you sure you want to delete {student.name}?</p>
+                                  <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+                                  <DialogFooter>
+                                    <Button variant="outline" onClick={() => setUserToDelete(null)}>Cancel</Button>
+                                    <Button 
+                                      variant="destructive" 
+                                      onClick={() => handleDeleteUser(student.id)}
+                                      disabled={isDeleting}
+                                    >
+                                      {isDeleting ? "Deleting..." : "Delete Student"}
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -160,12 +218,35 @@ const AdminDashboard = () => {
                             <TableCell>
                               {subjects.filter(s => s.teacherId === faculty.id).map(s => s.name).join(', ')}
                             </TableCell>
-                            <TableCell>
-                              <Button size="sm" asChild>
-                                <a href={`/faculty-dashboard?id=${faculty.id}`}>
-                                  View
-                                </a>
+                            <TableCell className="space-x-2">
+                              <Button size="sm" onClick={() => goToUserDashboard(faculty.id, 'faculty')}>
+                                View
                               </Button>
+                              
+                              <Dialog>
+                                <DialogTrigger asChild>
+                                  <Button variant="destructive" size="sm" onClick={() => setUserToDelete(faculty.id)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                  <DialogHeader>
+                                    <DialogTitle>Delete Faculty Member</DialogTitle>
+                                  </DialogHeader>
+                                  <p>Are you sure you want to delete {faculty.name}?</p>
+                                  <p className="text-sm text-muted-foreground">This action cannot be undone.</p>
+                                  <DialogFooter>
+                                    <Button variant="outline" onClick={() => setUserToDelete(null)}>Cancel</Button>
+                                    <Button 
+                                      variant="destructive" 
+                                      onClick={() => handleDeleteUser(faculty.id)}
+                                      disabled={isDeleting}
+                                    >
+                                      {isDeleting ? "Deleting..." : "Delete Faculty"}
+                                    </Button>
+                                  </DialogFooter>
+                                </DialogContent>
+                              </Dialog>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -230,8 +311,6 @@ const AdminDashboard = () => {
                     <SelectValue placeholder="Select a student" />
                   </SelectTrigger>
                   <SelectContent>
-                    {/* The issue is here - when selectedStudent is null, it gets set to empty string which causes the error */}
-                    {/* We need to ensure each SelectItem has a non-empty value */}
                     <SelectItem value="placeholder" disabled>Select a student</SelectItem>
                     {studentUsers.map(student => (
                       <SelectItem key={student.id} value={student.id}>
