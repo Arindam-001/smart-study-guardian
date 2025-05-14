@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
@@ -85,7 +84,6 @@ const FacultyDashboard = () => {
       type: resourceType,
       level: resourceLevel,
       topic: resourceTopic,
-      subjectId: selectedSubject
     });
 
     toast({

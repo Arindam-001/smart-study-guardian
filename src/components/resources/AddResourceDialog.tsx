@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import {
   Dialog,
@@ -71,6 +70,7 @@ const AddResourceDialog: React.FC<AddResourceDialogProps> = ({ onClose, noteTopi
         type,
         level,
         topic,
+        // subjectId is handled by the addResource function
       });
 
       toast({

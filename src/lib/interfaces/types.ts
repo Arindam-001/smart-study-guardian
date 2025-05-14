@@ -1,6 +1,4 @@
 
-import { IconType } from "react-icons";
-
 export type UserRole = 'student' | 'teacher' | 'admin';
 export type ResourceLevel = 'beginner' | 'intermediate' | 'advanced';
 
@@ -43,6 +41,7 @@ export interface Resource {
   level: ResourceLevel;
   topic: string;
   createdAt: Date;
+  subjectId?: string; // Added subjectId property
 }
 
 export interface Question {
