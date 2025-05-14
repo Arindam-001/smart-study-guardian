@@ -6,14 +6,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { Check, X, UserCheck, BookOpen, AlertTriangle, ShieldAlert, User, Users } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { user, users, subjects, warnings, semesters, grantSemesterAccess } = useAppContext();
+  const { 
+    user, 
+    users, 
+    subjects, 
+    warnings, 
+    semesters, 
+    grantSemesterAccess, 
+    assignTeacher, 
+    unassignTeacher 
+  } = useAppContext();
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
@@ -63,17 +71,7 @@ const AdminDashboard = () => {
       return;
     }
 
-    // Find the subject and update its teacherId
-    const updatedSubjects = subjects.map(subject => {
-      if (subject.id === selectedSubject) {
-        return { ...subject, teacherId: selectedTeacher };
-      }
-      return subject;
-    });
-
-    // Update the subjects in the context
-    const { updateSubjects } = useAppContext();
-    updateSubjects(updatedSubjects);
+    assignTeacher(selectedSubject, selectedTeacher);
     
     toast({
       title: "Teacher Assigned",
@@ -82,17 +80,7 @@ const AdminDashboard = () => {
   };
 
   const handleUnassignTeacher = (subjectId: string) => {
-    // Find the subject and update its teacherId to empty string
-    const updatedSubjects = subjects.map(subject => {
-      if (subject.id === subjectId) {
-        return { ...subject, teacherId: "" };
-      }
-      return subject;
-    });
-
-    // Update the subjects in the context
-    const { updateSubjects } = useAppContext();
-    updateSubjects(updatedSubjects);
+    unassignTeacher(subjectId);
     
     toast({
       title: "Teacher Unassigned",

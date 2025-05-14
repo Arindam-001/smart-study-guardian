@@ -10,11 +10,11 @@ export interface AppContextType {
   logout: () => Promise<void>;
   registerUser: (name: string, email: string, password: string, id: string, role: UserRole, currentSemester?: number, phone?: string) => Promise<boolean>;
   subjects: Subject[];
-  addSubject: (subject: Omit<Subject, 'id' | 'notes'>) => void;
+  addSubject: (subject: Omit<Subject, 'id' | 'notes'>) => Subject;
   updateSubjects: (subjects: Subject[]) => void;
   addNote: (subjectId: string, note: Omit<Note, 'id' | 'createdAt' | 'updatedAt'>) => void;
-  addResource: (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => void;
-  createAssignment: (subjectId: string, title: string) => Assignment;
+  addResource: (subjectId: string, resource: Omit<Resource, 'id' | 'createdAt'>) => Resource;
+  createAssignment: (subjectId: string, title: string, dueDate?: Date, duration?: number, selectedNotes?: Note[]) => Assignment;
   submitAssignment: (assignmentId: string, studentId: string, answers: Record<string, string>, fileUrl?: string) => any;
   addWarning: (studentId: string, assignmentId: string, reason: string) => void;
   warnings: Warning[];
@@ -28,4 +28,6 @@ export interface AppContextType {
   getSubmissionsByAssignment: (assignmentId: string) => AssignmentSubmission[];
   getSubmissionsByStudent: (studentId: string) => AssignmentSubmission[];
   clearAllUserData: () => boolean;
+  assignTeacher: (subjectId: string, teacherId: string) => void;
+  unassignTeacher: (subjectId: string) => void;
 }

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { AssignmentSubmission } from './interfaces/assignment';
 import { 
@@ -158,9 +157,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const newSubject: Subject = {
       ...subject,
       id: Date.now().toString(),
-      notes: []
+      notes: [],
+      resources: []
     };
     setSubjects(prev => [...prev, newSubject]);
+    return newSubject;
   };
 
   const updateSubjects = (updatedSubjects: Subject[]) => {
@@ -203,25 +204,65 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       }
       return subject;
     }));
+
+    return newResource;
   };
 
-  const createAssignment = (subjectId: string, title: string): Assignment => {
-    // Generate questions from notes content - in real app would use AI or more sophisticated logic
+  const createAssignment = (
+    subjectId: string, 
+    title: string,
+    dueDate?: Date,
+    duration?: number,
+    selectedNotes?: Note[]
+  ): Assignment => {
+    // Generate questions from notes content
     const subject = subjects.find(s => s.id === subjectId);
     const questions: Question[] = [];
     
     if (subject) {
-      // Create simple questions based on note content
-      subject.notes.forEach(note => {
-        // Create dummy questions based on note titles
-        questions.push({
-          id: `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          text: `Explain what is meant by "${note.title}"?`,
-          type: 'text'
+      // If notes are provided, use them to generate questions
+      if (selectedNotes && selectedNotes.length > 0) {
+        // Create questions based on note content
+        selectedNotes.forEach(note => {
+          // Simple approach: Extract sentences from the note content
+          // In a real app, this would use AI to generate better questions
+          const sentences = note.content
+            .split('.')
+            .filter(s => s.trim().length > 20)
+            .slice(0, 4);
+          
+          // Create questions from these sentences
+          sentences.forEach((sentence, i) => {
+            questions.push({
+              id: `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              text: `Explain what is meant by "${sentence.trim()}?"`,
+              type: 'text',
+              topic: note.title
+            });
+          });
+          
+          // Add some general questions about the note
+          questions.push({
+            id: `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            text: `Summarize the key points related to "${note.title}"`,
+            type: 'text',
+            topic: note.title
+          });
         });
-      });
+      } else {
+        // Fallback: use all subject notes
+        subject.notes.forEach(note => {
+          // Create dummy questions based on note titles
+          questions.push({
+            id: `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            text: `Explain what is meant by "${note.title}"?`,
+            type: 'text',
+            topic: note.title
+          });
+        });
+      }
 
-      // Add 20 questions if we have fewer
+      // Add additional questions if we have fewer than 20
       const dummyQuestions = [
         "What are the key concepts of this subject?",
         "Explain the difference between X and Y in the context of this subject.",
@@ -234,7 +275,8 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         questions.push({
           id: `q-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           text: dummyQuestions[questions.length % dummyQuestions.length],
-          type: 'text'
+          type: 'text',
+          topic: 'general'
         });
       }
     }
@@ -244,8 +286,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       subjectId,
       title,
       questions: questions.slice(0, 20), // Limit to 20 questions
-      dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
-      createdAt: new Date()
+      dueDate: dueDate || new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // Default: 1 week from now
+      createdAt: new Date(),
+      duration: duration || 60 // Default: 60 minutes
     };
 
     setAssignments(prev => [...prev, newAssignment]);
@@ -409,6 +452,24 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     }));
   };
   
+  const assignTeacher = (subjectId: string, teacherId: string) => {
+    setSubjects(prev => prev.map(subject => {
+      if (subject.id === subjectId) {
+        return { ...subject, teacherId };
+      }
+      return subject;
+    }));
+  };
+  
+  const unassignTeacher = (subjectId: string) => {
+    setSubjects(prev => prev.map(subject => {
+      if (subject.id === subjectId) {
+        return { ...subject, teacherId: "" };
+      }
+      return subject;
+    }));
+  };
+  
   const getStudentPerformance = (studentId: string) => {
     return studentPerformance.filter(p => p.studentId === studentId);
   };
@@ -446,7 +507,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     submissions,
     getSubmissionsByAssignment,
     getSubmissionsByStudent,
-    clearAllUserData
+    clearAllUserData,
+    assignTeacher,
+    unassignTeacher
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

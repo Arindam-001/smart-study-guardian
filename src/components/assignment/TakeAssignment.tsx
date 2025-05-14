@@ -1,5 +1,5 @@
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Assignment } from '@/lib/interfaces/types';
@@ -34,8 +34,17 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
     videoRef,
     streamRef,
     hasWarning,
-    movementCount
+    movementCount,
+    tabSwitchCount,
+    assignmentLocked,
   } = useProctoring(assignment.id);
+
+  // Automatically submit when assignment is locked
+  useEffect(() => {
+    if (assignmentLocked && !submitted) {
+      handleSubmit(true);
+    }
+  }, [assignmentLocked]);
 
   const currentQuestion = assignment.questions[currentQuestionIndex];
 
@@ -64,15 +73,15 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = (autoSubmitted: boolean = false) => {
     if (!user) return;
     
-    // Validate if a file is uploaded
-    if (!file) {
+    // Skip file validation if it's auto-submitted due to violations
+    if (!autoSubmitted && !file) {
       toast({
-        title: "File Required",
-        description: "Please upload your assignment document before submitting",
-        variant: "destructive"
+        title: "You can proceed without uploading",
+        description: "Your answers will be submitted directly",
+        variant: "default"
       });
       return;
     }
@@ -81,17 +90,28 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
     
     // In a real app, we would upload the file to storage and get a URL
     // For now, we'll just simulate a file URL
-    const mockFileUrl = `assignment_${assignment.id}_${user.id}_${file.name}`;
+    const mockFileUrl = file ? 
+      `assignment_${assignment.id}_${user.id}_${file.name}` : 
+      `assignment_${assignment.id}_${user.id}_auto_submitted`;
     
     setTimeout(() => {
       try {
+        // Convert answers to text file for faculty (simulated here)
+        const answersText = Object.entries(answers).map(([questionId, answer]) => {
+          const question = assignment.questions.find(q => q.id === questionId);
+          return `Question: ${question?.text || questionId}\nAnswer: ${answer || "No answer provided"}`;
+        }).join('\n\n');
+        
+        console.log(`Answers saved as text file for ${user.name} (${user.id}):\n${answersText}`);
+        
         // Submit and get recommendations
         const results = submitAssignment(assignment.id, user.id, answers, mockFileUrl);
         setPerformance(results);
         
         toast({
-          title: "Assignment Submitted",
-          description: `Your score: ${results.score}/${assignment.questions.length}. Check your recommendations!`
+          title: autoSubmitted ? "Assignment Auto-Submitted" : "Assignment Submitted",
+          description: `Your score: ${results.score}/${assignment.questions.length}. Check your recommendations!`,
+          variant: autoSubmitted ? "destructive" : "default"
         });
         
         setSubmitted(true);
@@ -163,7 +183,7 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
             
             {currentQuestionIndex === assignment.questions.length - 1 && (
               <div className="mt-6 border-t pt-4">
-                <h4 className="font-medium mb-2">Upload Assignment Document</h4>
+                <h4 className="font-medium mb-2">Upload Assignment Document (Optional)</h4>
                 <div className="flex flex-col space-y-2">
                   <Input 
                     type="file" 
@@ -171,17 +191,9 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
                     onChange={handleFileChange}
                     accept=".pdf,.doc,.docx" 
                   />
-                  {!file && (
-                    <p className="text-xs text-muted-foreground flex items-center">
-                      <AlertTriangle className="h-3 w-3 mr-1 text-amber-500" />
-                      Upload is required before submission
-                    </p>
-                  )}
-                  {file && (
-                    <p className="text-xs text-green-600">
-                      File selected: {file.name}
-                    </p>
-                  )}
+                  <p className="text-xs text-muted-foreground">
+                    You can submit without uploading a document. Your answers will be saved automatically.
+                  </p>
                 </div>
               </div>
             )}
@@ -197,7 +209,7 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
             
             {currentQuestionIndex === assignment.questions.length - 1 ? (
               <Button 
-                onClick={handleSubmit} 
+                onClick={() => handleSubmit(false)} 
                 className="bg-edu-primary"
                 disabled={isSubmitting}
               >
@@ -228,6 +240,7 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
           videoRef={videoRef}
           movementCount={movementCount}
           hasWarning={hasWarning}
+          tabSwitchCount={tabSwitchCount}
         />
       </div>
     </div>

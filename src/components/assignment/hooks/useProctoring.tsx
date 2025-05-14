@@ -8,6 +8,7 @@ export const useProctoring = (assignmentId: string) => {
   const [movementCount, setMovementCount] = useState(0);
   const [deviceDetected, setDeviceDetected] = useState(false);
   const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [assignmentLocked, setAssignmentLocked] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const { user, addWarning } = useAppContext();
@@ -17,13 +18,39 @@ export const useProctoring = (assignmentId: string) => {
     if (!user) return;
     
     setHasWarning(true);
-    toast({
-      title: "Warning!",
-      description: reason,
-      variant: "destructive"
-    });
     
+    // Only show toast for faculty/admin
+    if (user.role !== 'student') {
+      toast({
+        title: "Warning!",
+        description: reason,
+        variant: "destructive"
+      });
+    }
+    
+    // Add warning to the system
     addWarning(user.id, assignmentId, reason);
+
+    // Check if assignment should be locked (after 3 tab switches or copy attempts)
+    if (reason.includes("Tab switching") || reason.includes("Copy attempt") || reason.includes("Paste attempt")) {
+      if (tabSwitchCount >= 2) { // Lock on 3rd attempt (0-indexed count, so 2 = 3rd)
+        setAssignmentLocked(true);
+        toast({
+          title: "Assignment Locked",
+          description: "Due to multiple violations, your assignment has been locked and auto-submitted.",
+          variant: "destructive"
+        });
+      } else {
+        // For students, show a warning toast
+        if (user.role === 'student') {
+          toast({
+            title: "Warning!",
+            description: `${reason}. After 3 violations, your assignment will be auto-submitted.`,
+            variant: "destructive"
+          });
+        }
+      }
+    }
   };
 
   useEffect(() => {
@@ -73,8 +100,11 @@ export const useProctoring = (assignmentId: string) => {
     // Monitor tab switching
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
-        setTabSwitchCount(prev => prev + 1);
-        createWarning("Tab switching detected");
+        setTabSwitchCount(prev => {
+          const newCount = prev + 1;
+          createWarning("Tab switching detected");
+          return newCount;
+        });
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -116,7 +146,7 @@ export const useProctoring = (assignmentId: string) => {
         streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
-  }, [assignmentId]);
+  }, [assignmentId, tabSwitchCount]);
 
   return {
     videoRef,
@@ -125,6 +155,7 @@ export const useProctoring = (assignmentId: string) => {
     movementCount,
     deviceDetected,
     tabSwitchCount,
+    assignmentLocked,
     createWarning
   };
 };
