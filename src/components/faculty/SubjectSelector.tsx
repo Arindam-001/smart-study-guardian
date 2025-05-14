@@ -23,7 +23,7 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({ subjects, selectedSub
         </SelectTrigger>
         <SelectContent>
           {subjects.map(subject => (
-            <SelectItem key={subject.id} value={subject.id}>
+            <SelectItem key={subject.id} value={subject.id || `subject-${Date.now()}`}>
               {subject.name}
             </SelectItem>
           ))}

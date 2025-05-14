@@ -223,13 +223,16 @@ const AdminDashboard = () => {
               <div className="space-y-2">
                 <Label htmlFor="student-select">Select Student</Label>
                 <Select 
-                  value={selectedStudent || ''} 
+                  value={selectedStudent || 'placeholder'} 
                   onValueChange={setSelectedStudent}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a student" />
                   </SelectTrigger>
                   <SelectContent>
+                    {/* The issue is here - when selectedStudent is null, it gets set to empty string which causes the error */}
+                    {/* We need to ensure each SelectItem has a non-empty value */}
+                    <SelectItem value="placeholder" disabled>Select a student</SelectItem>
                     {studentUsers.map(student => (
                       <SelectItem key={student.id} value={student.id}>
                         {student.name}
@@ -242,13 +245,17 @@ const AdminDashboard = () => {
               <div className="space-y-2">
                 <Label htmlFor="semester-select">Select Semester</Label>
                 <Select 
-                  value={selectedSemester?.toString() || ''} 
-                  onValueChange={(value) => setSelectedSemester(Number(value))}
+                  value={selectedSemester?.toString() || 'placeholder'} 
+                  onValueChange={(value) => {
+                    if (value === 'placeholder') return;
+                    setSelectedSemester(Number(value));
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a semester" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="placeholder" disabled>Select a semester</SelectItem>
                     {semesters.map(semester => (
                       <SelectItem key={semester} value={semester.toString()}>
                         Semester {semester}
