@@ -3,15 +3,14 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Assignment } from '@/lib/interfaces/types';
-import { useToast } from '@/components/ui/use-toast';
 import { useProctoring } from './hooks/useProctoring';
 import ProctoringMonitor from './proctoring/ProctoringMonitor';
-import QuestionNavigation from './questions/QuestionNavigation';
 import { useAppContext } from '@/lib/context';
 import AssignmentTabs from './tabs/AssignmentTabs';
 import AssignmentResults from './results/AssignmentResults';
 import ViolationWarning from './warnings/ViolationWarning';
-import { generateYouTubeRecommendations } from './utils/recommendationUtils';
+import { useAssignmentSubmission } from './hooks/useAssignmentSubmission';
+import QuestionSection from './questions/QuestionSection';
 
 interface TakeAssignmentProps {
   assignment: Assignment;
@@ -21,15 +20,10 @@ interface TakeAssignmentProps {
 const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [performance, setPerformance] = useState<any>(null);
   const [file, setFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<string>('questions');
-  const [youtubeRecommendations, setYoutubeRecommendations] = useState<any[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { toast } = useToast();
-  const { user, submitAssignment } = useAppContext();
+  const { user } = useAppContext();
   
   const {
     videoRef,
@@ -42,12 +36,26 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
     createWarning
   } = useProctoring(assignment.id);
 
+  const {
+    isSubmitting,
+    submitted,
+    performance,
+    youtubeRecommendations,
+    handleSubmit
+  } = useAssignmentSubmission({
+    assignment,
+    answers,
+    file,
+    streamRef,
+    createWarning
+  });
+
   // Automatically submit when assignment is locked
   useEffect(() => {
     if (assignmentLocked && !submitted) {
       handleSubmit(true);
     }
-  }, [assignmentLocked]);
+  }, [assignmentLocked, submitted]);
 
   // Track tab visibility changes
   useEffect(() => {
@@ -91,72 +99,6 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
     }
   };
 
-  const handleSubmit = (autoSubmitted: boolean = false) => {
-    if (!user) return;
-    
-    // Skip file validation if it's auto-submitted due to violations
-    if (!autoSubmitted && !file) {
-      toast({
-        title: "You can proceed without uploading",
-        description: "Your answers will be submitted directly",
-        variant: "default"
-      });
-      return;
-    }
-    
-    setIsSubmitting(true);
-    
-    // In a real app, we would upload the file to storage and get a URL
-    // For now, we'll just simulate a file URL
-    const mockFileUrl = file ? 
-      `assignment_${assignment.id}_${user.id}_${file.name}` : 
-      `assignment_${assignment.id}_${user.id}_auto_submitted`;
-    
-    setTimeout(() => {
-      try {
-        // Convert answers to text file for faculty (simulated here)
-        const answersText = Object.entries(answers).map(([questionId, answer]) => {
-          const question = assignment.questions.find(q => q.id === questionId);
-          return `Question: ${question?.text || questionId}\nAnswer: ${answer || "No answer provided"}`;
-        }).join('\n\n');
-        
-        console.log(`Answers saved as text file for ${user.name} (${user.id}):\n${answersText}`);
-        
-        // Use NLP to analyze answers and provide recommendations (simulated)
-        console.log("Performing NLP analysis on student answers...");
-        
-        // Submit and get recommendations
-        const results = submitAssignment(assignment.id, user.id, answers, mockFileUrl);
-        setPerformance(results);
-        
-        // Generate YouTube recommendations based on performance
-        const recommendations = generateYouTubeRecommendations(results);
-        setYoutubeRecommendations(recommendations);
-        
-        toast({
-          title: autoSubmitted ? "Assignment Auto-Submitted" : "Assignment Submitted",
-          description: `Your score: ${results.score}/${assignment.questions.length}. Check your recommendations!`,
-          variant: autoSubmitted ? "destructive" : "default"
-        });
-        
-        setSubmitted(true);
-      } catch (error) {
-        toast({
-          title: "Error",
-          description: "Failed to submit assignment",
-          variant: "destructive"
-        });
-      } finally {
-        setIsSubmitting(false);
-        
-        // Stop the camera stream
-        if (streamRef.current) {
-          streamRef.current.getTracks().forEach(track => track.stop());
-        }
-      }
-    }, 1500);
-  };
-
   // When submitted, show results
   if (submitted && performance) {
     return (
@@ -195,35 +137,22 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
               onFileChange={handleFileChange}
             />
           </CardContent>
-          <CardFooter className="flex justify-between">
+          <CardFooter>
             {activeTab === 'questions' ? (
-              <>
-                <Button 
-                  variant="outline" 
-                  onClick={handlePrevQuestion} 
-                  disabled={currentQuestionIndex === 0}
-                >
-                  Previous
-                </Button>
-                
-                {currentQuestionIndex === assignment.questions.length - 1 ? (
-                  <Button 
-                    onClick={() => handleSubmit(false)} 
-                    className="bg-edu-primary"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? "Submitting..." : "Submit Assignment"}
-                  </Button>
-                ) : (
-                  <Button 
-                    variant="default" 
-                    onClick={handleNextQuestion} 
-                    className="bg-edu-primary"
-                  >
-                    Next
-                  </Button>
-                )}
-              </>
+              <QuestionSection 
+                questions={assignment.questions}
+                currentQuestionIndex={currentQuestionIndex}
+                currentQuestion={currentQuestion}
+                answers={answers}
+                onAnswerChange={handleAnswerChange}
+                onNextQuestion={handleNextQuestion}
+                onPrevQuestion={handlePrevQuestion}
+                onSelectQuestion={setCurrentQuestionIndex}
+                isSubmitting={isSubmitting}
+                fileInputRef={fileInputRef}
+                onFileChange={handleFileChange}
+                onSubmit={() => handleSubmit(false)}
+              />
             ) : (
               <div className="w-full flex justify-end">
                 <Button 
@@ -236,15 +165,6 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
             )}
           </CardFooter>
         </Card>
-        
-        {activeTab === 'questions' && (
-          <QuestionNavigation 
-            questions={assignment.questions}
-            currentQuestionIndex={currentQuestionIndex}
-            answers={answers}
-            onSelectQuestion={setCurrentQuestionIndex}
-          />
-        )}
       </div>
 
       <div className="w-full lg:w-1/4">
