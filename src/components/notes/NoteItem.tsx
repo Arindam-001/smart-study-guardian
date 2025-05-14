@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Note } from '@/lib/interfaces/types';
+import { Note, Resource } from '@/lib/interfaces/types'; // Import Resource type
 import { format } from 'date-fns';
 import AddResourceDialog from '@/components/resources/AddResourceDialog';
 import { useAppContext } from '@/lib/context';

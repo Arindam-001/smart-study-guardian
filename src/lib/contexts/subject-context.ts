@@ -1,4 +1,3 @@
-
 import { Subject, Note, Resource } from '@/lib/interfaces/types';
 
 // Subject-related context functions
@@ -25,7 +24,7 @@ export const useSubjectFunctions = (
     setSubjects(newSubjects);
   };
 
-  // Add note function
+  // Add note function - updated to include subjectId
   const addNote = (subjectId: string, title: string, content: string): string => {
     const noteId = `note_${Date.now()}`;
     
@@ -42,6 +41,7 @@ export const useSubjectFunctions = (
                   content,
                   createdAt: new Date(),
                   updatedAt: new Date(),
+                  subjectId: subjectId // Add subjectId to the note
                 }
               ]
             }
