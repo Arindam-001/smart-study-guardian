@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
-import { Note } from '@/lib/interfaces/types';
+import { Note, Resource } from '@/lib/interfaces/types';
 import { AlertTriangle, Zap } from 'lucide-react';
 import QuickAssignmentGenerator from '@/components/faculty/QuickAssignmentGenerator';
 
@@ -22,6 +22,7 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
+  const [selectedResources, setSelectedResources] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState<Date | undefined>(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   );
@@ -49,10 +50,10 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
       return;
     }
 
-    if (selectedNotes.length === 0) {
+    if (selectedNotes.length === 0 && selectedResources.length === 0) {
       toast({
         title: "Error",
-        description: "Please select at least one note to generate questions from",
+        description: "Please select at least one note or resource to generate questions from",
         variant: "destructive"
       });
       return;
@@ -74,8 +75,13 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
         selectedNotes.includes(note.id)
       ) || [];
       
+      // Get the resources to use for generating questions
+      const resourcesToUse = subject?.resources?.filter(resource => 
+        selectedResources.includes(resource.id)
+      ) || [];
+      
       // Create assignment with the specified parameters
-      const assignment = createAssignment(subjectId, title, finalDueDate, duration, notesToUse);
+      const assignment = createAssignment(subjectId, title, finalDueDate, duration, notesToUse, resourcesToUse);
       
       toast({
         title: "Success",
@@ -99,6 +105,14 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
       setSelectedNotes(selectedNotes.filter(id => id !== noteId));
     } else {
       setSelectedNotes([...selectedNotes, noteId]);
+    }
+  };
+
+  const toggleResourceSelection = (resourceId: string) => {
+    if (selectedResources.includes(resourceId)) {
+      setSelectedResources(selectedResources.filter(id => id !== resourceId));
+    } else {
+      setSelectedResources([...selectedResources, resourceId]);
     }
   };
 
@@ -238,6 +252,37 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
           )}
         </div>
         
+        <div className="space-y-2">
+          <Label className="flex items-center justify-between">
+            <span>Select Resources to Generate Questions From</span>
+            <span className="text-xs text-muted-foreground">
+              Selected: {selectedResources.length}
+            </span>
+          </Label>
+          {subject && subject.resources && subject.resources.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+              {subject.resources.map(resource => (
+                <div 
+                  key={resource.id}
+                  className={`border p-2 rounded-md cursor-pointer transition-colors ${
+                    selectedResources.includes(resource.id) ? 'bg-primary/10 border-primary' : ''
+                  }`}
+                  onClick={() => toggleResourceSelection(resource.id)}
+                >
+                  <div className="font-medium">{resource.title}</div>
+                  <div className="text-xs text-muted-foreground truncate">
+                    {resource.type} • {resource.topic}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm text-muted-foreground">
+              No resources available. Add some resources before creating an assignment.
+            </div>
+          )}
+        </div>
+        
         <div className="pt-4 flex justify-end gap-2">
           <Button 
             variant="outline" 
@@ -247,7 +292,7 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
           </Button>
           <Button 
             onClick={handleCreateAssignment}
-            disabled={isCreating || !title || selectedNotes.length === 0}
+            disabled={isCreating || !title || (selectedNotes.length === 0 && selectedResources.length === 0)}
           >
             {isCreating ? "Creating..." : "Create Assignment"}
           </Button>

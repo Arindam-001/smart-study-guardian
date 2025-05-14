@@ -1,5 +1,5 @@
 
-import { Assignment, Note } from '@/lib/interfaces/types';
+import { Assignment, Note, Resource } from '@/lib/interfaces/types';
 import { AssignmentSubmission } from '@/lib/interfaces/assignment';
 
 // Assignment-related context functions
@@ -14,7 +14,8 @@ export const useAssignmentFunctions = (
     title: string, 
     dueDate?: Date, 
     duration?: number, 
-    selectedNotes?: Note[]
+    selectedNotes?: Note[],
+    selectedResources?: Resource[]
   ): Assignment => {
     const newAssignment: Assignment = {
       id: `assignment_${Date.now()}`,

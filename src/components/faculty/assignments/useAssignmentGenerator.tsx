@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useAppContext } from '@/lib/context';
 import { useToast } from '@/hooks/use-toast';
-import { Note } from '@/lib/interfaces/types';
+import { Note, Resource } from '@/lib/interfaces/types';
 
 interface UseAssignmentGeneratorProps {
   subjectId: string;
@@ -14,6 +14,7 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
   const [showDialog, setShowDialog] = useState(false);
   const [title, setTitle] = useState('');
   const [selectedNotes, setSelectedNotes] = useState<string[]>([]);
+  const [selectedResources, setSelectedResources] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState<Date>(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
   const [enableProctoring, setEnableProctoring] = useState(true);
   const [questionCount, setQuestionCount] = useState("20");
@@ -32,6 +33,8 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
       setTitle,
       selectedNotes,
       setSelectedNotes,
+      selectedResources,
+      setSelectedResources,
       dueDate,
       setDueDate,
       enableProctoring,
@@ -39,8 +42,10 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
       questionCount,
       setQuestionCount,
       handleNoteToggle: () => {},
+      handleResourceToggle: () => {},
       handleGenerate: () => {},
       notes: [],
+      resources: [],
     };
   }
   
@@ -49,6 +54,14 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
       setSelectedNotes(prev => prev.filter(id => id !== noteId));
     } else {
       setSelectedNotes(prev => [...prev, noteId]);
+    }
+  };
+
+  const handleResourceToggle = (resourceId: string) => {
+    if (selectedResources.includes(resourceId)) {
+      setSelectedResources(prev => prev.filter(id => id !== resourceId));
+    } else {
+      setSelectedResources(prev => [...prev, resourceId]);
     }
   };
   
@@ -62,10 +75,10 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
       return;
     }
     
-    if (selectedNotes.length === 0) {
+    if (selectedNotes.length === 0 && selectedResources.length === 0) {
       toast({
         title: "Error", 
-        description: "Please select at least one note to generate questions from",
+        description: "Please select at least one note or resource to generate questions from",
         variant: "destructive"
       });
       return;
@@ -75,14 +88,16 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
     
     try {
       const notesToUse: Note[] = subject.notes.filter(note => selectedNotes.includes(note.id));
+      const resourcesToUse: Resource[] = (subject.resources || []).filter(resource => selectedResources.includes(resource.id));
       
-      // Pass the notes to createAssignment for generating questions
+      // Pass the notes and resources to createAssignment for generating questions
       const assignment = createAssignment(
         subjectId, 
         title, 
         dueDate, 
         60, // 60 minutes duration by default
-        notesToUse
+        notesToUse,
+        resourcesToUse
       );
       
       toast({
@@ -93,6 +108,7 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
       setShowDialog(false);
       setTitle('');
       setSelectedNotes([]);
+      setSelectedResources([]);
       onAssignmentCreated();
     } catch (error) {
       toast({
@@ -113,6 +129,8 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
     setTitle,
     selectedNotes,
     setSelectedNotes,
+    selectedResources,
+    setSelectedResources,
     dueDate,
     setDueDate,
     enableProctoring,
@@ -120,7 +138,9 @@ export const useAssignmentGenerator = ({ subjectId, onAssignmentCreated }: UseAs
     questionCount,
     setQuestionCount,
     handleNoteToggle,
+    handleResourceToggle,
     handleGenerate,
     notes: subject.notes,
+    resources: subject.resources || [],
   };
 };

@@ -4,8 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { FileText } from 'lucide-react';
 import NoteSelectionList from './NoteSelectionList';
+import ResourceSelectionList from './ResourceSelectionList';
 import AssignmentFormConfig from './AssignmentFormConfig';
-import { Note } from '@/lib/interfaces/types';
+import { Note, Resource } from '@/lib/interfaces/types';
 
 interface AssignmentCreationDialogProps {
   showDialog: boolean;
@@ -14,6 +15,8 @@ interface AssignmentCreationDialogProps {
   setTitle: (title: string) => void;
   selectedNotes: string[];
   onNoteToggle: (noteId: string) => void;
+  selectedResources: string[];
+  onResourceToggle: (resourceId: string) => void;
   dueDate: Date;
   setDueDate: (date: Date | undefined) => void;
   enableProctoring: boolean;
@@ -23,6 +26,7 @@ interface AssignmentCreationDialogProps {
   handleGenerate: () => void;
   isGenerating: boolean;
   notes: Note[];
+  resources: Resource[];
 }
 
 const AssignmentCreationDialog: React.FC<AssignmentCreationDialogProps> = ({
@@ -32,6 +36,8 @@ const AssignmentCreationDialog: React.FC<AssignmentCreationDialogProps> = ({
   setTitle,
   selectedNotes,
   onNoteToggle,
+  selectedResources,
+  onResourceToggle,
   dueDate,
   setDueDate,
   enableProctoring,
@@ -40,15 +46,16 @@ const AssignmentCreationDialog: React.FC<AssignmentCreationDialogProps> = ({
   setQuestionCount,
   handleGenerate,
   isGenerating,
-  notes
+  notes,
+  resources
 }) => {
   return (
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create New Assignment</DialogTitle>
           <DialogDescription>
-            Generate an assignment with AI-based questions from your class notes
+            Generate an assignment with AI-based questions from your class notes and resources
           </DialogDescription>
         </DialogHeader>
         
@@ -68,6 +75,12 @@ const AssignmentCreationDialog: React.FC<AssignmentCreationDialogProps> = ({
           selectedNotes={selectedNotes}
           onNoteToggle={onNoteToggle}
         />
+
+        <ResourceSelectionList
+          resources={resources}
+          selectedResources={selectedResources}
+          onResourceToggle={onResourceToggle}
+        />
         
         <DialogFooter>
           <Button variant="outline" onClick={() => setShowDialog(false)}>
@@ -75,7 +88,7 @@ const AssignmentCreationDialog: React.FC<AssignmentCreationDialogProps> = ({
           </Button>
           <Button 
             onClick={handleGenerate} 
-            disabled={isGenerating || !title || selectedNotes.length === 0}
+            disabled={isGenerating || !title || (selectedNotes.length === 0 && selectedResources.length === 0)}
             className="bg-edu-primary"
           >
             {isGenerating ? (

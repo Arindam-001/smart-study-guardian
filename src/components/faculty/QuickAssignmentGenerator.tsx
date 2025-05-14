@@ -20,6 +20,7 @@ const QuickAssignmentGenerator: React.FC<QuickAssignmentGeneratorProps> = ({
     title,
     setTitle,
     selectedNotes,
+    selectedResources,
     dueDate,
     setDueDate,
     enableProctoring,
@@ -27,8 +28,10 @@ const QuickAssignmentGenerator: React.FC<QuickAssignmentGeneratorProps> = ({
     questionCount,
     setQuestionCount,
     handleNoteToggle,
+    handleResourceToggle,
     handleGenerate,
     notes,
+    resources,
   } = useAssignmentGenerator({ subjectId, onAssignmentCreated });
 
   return (
@@ -42,6 +45,8 @@ const QuickAssignmentGenerator: React.FC<QuickAssignmentGeneratorProps> = ({
         setTitle={setTitle}
         selectedNotes={selectedNotes}
         onNoteToggle={handleNoteToggle}
+        selectedResources={selectedResources}
+        onResourceToggle={handleResourceToggle}
         dueDate={dueDate}
         setDueDate={setDueDate}
         enableProctoring={enableProctoring}
@@ -51,6 +56,7 @@ const QuickAssignmentGenerator: React.FC<QuickAssignmentGeneratorProps> = ({
         handleGenerate={handleGenerate}
         isGenerating={isGenerating}
         notes={notes}
+        resources={resources}
       />
     </>
   );
