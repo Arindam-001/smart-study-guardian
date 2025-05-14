@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/lib/context';
@@ -14,7 +13,7 @@ import {
 } from '@/components/ui/navigation-menu';
 import { cn } from '@/lib/utils';
 import { Bell, Menu } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { User, UserRole } from '@/lib/interfaces/types';
 import ReturnToAdminPanel from './ReturnToAdminPanel';
 import { getItem } from '@/lib/local-storage';
@@ -29,7 +28,7 @@ const getRoleBasedRoutes = (role: UserRole) => {
     case 'student':
       return [
         { label: 'Dashboard', path: '/student-dashboard' },
-        { label: 'Subjects', path: '/semester/1' }, // Default to semester 1
+        // Removed Subjects tab
         { label: 'Notifications', path: '/notifications' },
       ];
     case 'teacher':

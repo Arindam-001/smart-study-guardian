@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, Calendar, History, List, FileText } from 'lucide-react';
+import { BookOpen, Calendar, History, List, FileText, Book, File } from 'lucide-react';
 import { ResourceLevel, Resource } from '@/lib/interfaces/types';
 import RecommendationsCard from '@/components/student/RecommendationsCard';
 import HistoryCard from '@/components/student/HistoryCard';
@@ -17,6 +18,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { UserCheck } from 'lucide-react';
+import NotesTab from '@/components/dashboard/NotesTab';
+import ResourcesTab from '@/components/dashboard/ResourcesTab';
 
 const StudentDashboard = () => {
   const location = useLocation();
@@ -127,7 +130,7 @@ const StudentDashboard = () => {
           <Card className="mb-6">
             <CardContent className="pt-6">
               <Tabs defaultValue="overview">
-                <TabsList className="grid grid-cols-5 mb-4">
+                <TabsList className="grid grid-cols-7 mb-4">
                   <TabsTrigger value="overview" className="flex items-center gap-2">
                     <List className="h-4 w-4" />
                     <span>Overview</span>
@@ -135,6 +138,14 @@ const StudentDashboard = () => {
                   <TabsTrigger value="assignments" className="flex items-center gap-2">
                     <FileText className="h-4 w-4" />
                     <span>Assignments</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="notes" className="flex items-center gap-2">
+                    <Book className="h-4 w-4" />
+                    <span>Notes</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="resources" className="flex items-center gap-2">
+                    <File className="h-4 w-4" />
+                    <span>Resources</span>
                   </TabsTrigger>
                   <TabsTrigger value="performance" className="flex items-center gap-2">
                     <BookOpen className="h-4 w-4" />
@@ -167,33 +178,32 @@ const StudentDashboard = () => {
                   />
                 </TabsContent>
                 
+                <TabsContent value="notes">
+                  <NotesTab 
+                    subjects={currentSemesterSubjects}
+                    selectedSubject={selectedSubject}
+                    setSelectedSubject={setSelectedSubject}
+                  />
+                </TabsContent>
+                
+                <TabsContent value="resources">
+                  <ResourcesTab 
+                    subjects={currentSemesterSubjects}
+                    selectedSubject={selectedSubject}
+                    setSelectedSubject={setSelectedSubject}
+                    showAllResources={showAllResources}
+                    setShowAllResources={setShowAllResources}
+                    studentLevel={studentLevel}
+                    allResources={allResources}
+                    allRecommendations={allRecommendations}
+                  />
+                </TabsContent>
+                
                 <TabsContent value="performance">
                   <div className="space-y-8">
                     <PerformanceTab 
                       studentPerformances={studentPerformances} 
                     />
-                    
-                    {/* Move recommendations into performance tab */}
-                    <div>
-                      <h3 className="text-lg font-medium mb-4">Personalized Recommendations</h3>
-                      <div className="flex items-center space-x-2 mb-4">
-                        <Switch 
-                          id="resource-mode" 
-                          checked={showAllResources} 
-                          onCheckedChange={setShowAllResources}
-                        />
-                        <Label htmlFor="resource-mode">
-                          {showAllResources ? "Show All Resources" : "Show Recommendations"}
-                        </Label>
-                      </div>
-                      
-                      <RecommendationsCard 
-                        resources={allRecommendations} 
-                        studentLevel={studentLevel} 
-                        allResources={allResources}
-                        showAllResources={showAllResources}
-                      />
-                    </div>
                   </div>
                 </TabsContent>
                 
