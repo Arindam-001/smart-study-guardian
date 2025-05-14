@@ -1,257 +1,168 @@
 
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { FileEdit, FilePenLine } from 'lucide-react';
+import { EditIcon, FileText, Save, AlertTriangle } from 'lucide-react';
+import { useProctoring } from './hooks/useProctoring';
+import { useAppContext } from '@/lib/context';
 import { useToast } from '@/hooks/use-toast';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
 
 interface AssignmentEditorProps {
   onClose: () => void;
+  type?: 'word' | 'powerpoint';
 }
 
-const AssignmentEditor: React.FC<AssignmentEditorProps> = ({ onClose }) => {
-  const [activeTab, setActiveTab] = useState('word');
-  const [wordContent, setWordContent] = useState('');
-  const [pptContent, setPptContent] = useState('');
+const AssignmentEditor = ({ onClose, type = 'word' }: AssignmentEditorProps) => {
+  const [content, setContent] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
+  const { user } = useAppContext();
   
-  // Prevent copy/paste operations
+  // Initialize proctoring for this component too
+  const { createWarning } = useProctoring('editor');
+  
   useEffect(() => {
-    const preventCopyPaste = (e: ClipboardEvent) => {
+    const handleCopy = (e: ClipboardEvent) => {
       e.preventDefault();
+      createWarning("Copy attempt detected in editor");
       toast({
-        title: "Action Restricted",
-        description: "Copy and paste functions are disabled in this editor",
+        title: "Warning",
+        description: "Copying content is not allowed during assignments",
         variant: "destructive"
       });
       return false;
     };
     
-    // Add event listeners
-    document.addEventListener('copy', preventCopyPaste);
-    document.addEventListener('paste', preventCopyPaste);
-    document.addEventListener('cut', preventCopyPaste);
-    
-    // Clean up
-    return () => {
-      document.removeEventListener('copy', preventCopyPaste);
-      document.removeEventListener('paste', preventCopyPaste);
-      document.removeEventListener('cut', preventCopyPaste);
+    const handlePaste = (e: ClipboardEvent) => {
+      e.preventDefault();
+      createWarning("Paste attempt detected in editor");
+      toast({
+        title: "Warning",
+        description: "Pasting content is not allowed during assignments",
+        variant: "destructive"
+      });
+      return false;
     };
-  }, []);
-
-  // Handle MS Word text formatting
-  const handleWordFormatting = (format: string) => {
-    const textarea = document.getElementById('word-editor') as HTMLTextAreaElement;
-    if (!textarea) return;
     
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = wordContent.substring(start, end);
+    document.addEventListener('copy', handleCopy);
+    document.addEventListener('paste', handlePaste);
     
-    let formattedText = '';
-    let newCursorPos = end;
-    
-    switch (format) {
-      case 'bold':
-        formattedText = `**${selectedText}**`;
-        newCursorPos = start + formattedText.length;
-        break;
-      case 'italic':
-        formattedText = `*${selectedText}*`;
-        newCursorPos = start + formattedText.length;
-        break;
-      case 'underline':
-        formattedText = `_${selectedText}_`;
-        newCursorPos = start + formattedText.length;
-        break;
-      case 'heading':
-        formattedText = `# ${selectedText}`;
-        newCursorPos = start + formattedText.length;
-        break;
-      case 'bullet':
-        formattedText = `• ${selectedText}`;
-        newCursorPos = start + formattedText.length;
-        break;
-    }
-    
-    const newContent = wordContent.substring(0, start) + formattedText + wordContent.substring(end);
-    setWordContent(newContent);
-    
-    // Reset cursor position after state update
-    setTimeout(() => {
-      textarea.focus();
-      textarea.selectionStart = newCursorPos;
-      textarea.selectionEnd = newCursorPos;
-    }, 0);
+    return () => {
+      document.removeEventListener('copy', handleCopy);
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [createWarning, toast]);
+  
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setContent(e.target.value);
   };
-
-  // Handle PowerPoint slide operations
-  const handlePptOperation = (operation: string) => {
-    switch(operation) {
-      case 'new-slide':
-        setPptContent(prev => `${prev}\n\n--- New Slide ---\n`);
-        break;
-      case 'add-title':
-        setPptContent(prev => `${prev}\n[Title]: Your Slide Title\n`);
-        break;
-      case 'add-bullet':
-        setPptContent(prev => `${prev}\n• Bullet point\n`);
-        break;
-      case 'add-image':
-        setPptContent(prev => `${prev}\n[Image Placeholder]\n`);
-        break;
-    }
-  };
-
+  
   const handleSave = () => {
-    toast({
-      title: "Content Saved",
-      description: "Your document has been saved to your assignment"
-    });
-    onClose();
+    setIsSaving(true);
+    
+    // Simulating save action
+    setTimeout(() => {
+      toast({
+        title: "Content Saved",
+        description: `Your ${type === 'word' ? 'document' : 'presentation'} has been saved`,
+      });
+      setIsSaving(false);
+    }, 800);
   };
-
+  
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          {activeTab === 'word' ? (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center mb-4">
+        <h3 className="text-lg font-medium flex items-center gap-2">
+          {type === 'word' ? (
             <>
-              <FileEdit className="mr-2 h-5 w-5" />
-              Document Editor
+              <FileText className="h-5 w-5 text-blue-600" />
+              <span>Microsoft Word</span>
             </>
           ) : (
             <>
-              <FilePenLine className="mr-2 h-5 w-5" />
-              Presentation Editor
+              <FileText className="h-5 w-5 text-orange-600" />
+              <span>Microsoft PowerPoint</span>
             </>
           )}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="word">MS Word</TabsTrigger>
-            <TabsTrigger value="ppt">MS PowerPoint</TabsTrigger>
-          </TabsList>
-          
-          {/* MS Word Editor */}
-          <TabsContent value="word" className="space-y-4">
-            <div className="flex flex-wrap gap-2 mb-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleWordFormatting('bold')}
-                className="font-bold"
-              >
-                B
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleWordFormatting('italic')}
-                className="italic"
-              >
-                I
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleWordFormatting('underline')}
-                className="underline"
-              >
-                U
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleWordFormatting('heading')}
-              >
-                Heading
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleWordFormatting('bullet')}
-              >
-                • Bullet
-              </Button>
-            </div>
-            
-            <div className="border rounded-md p-4 bg-white">
-              <textarea
-                id="word-editor"
-                value={wordContent}
-                onChange={(e) => setWordContent(e.target.value)}
-                className="w-full h-[400px] outline-none resize-none"
-                placeholder="Start typing your document here... (Copy and paste are disabled)"
-                spellCheck="true"
-              />
-            </div>
-          </TabsContent>
-          
-          {/* MS PowerPoint Editor */}
-          <TabsContent value="ppt" className="space-y-4">
-            <div className="flex flex-wrap gap-2 mb-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePptOperation('new-slide')}
-              >
-                New Slide
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePptOperation('add-title')}
-              >
-                Add Title
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePptOperation('add-bullet')}
-              >
-                Add Bullet
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handlePptOperation('add-image')}
-              >
-                Add Image
-              </Button>
-            </div>
-            
-            <div className="border rounded-md bg-white">
-              <AspectRatio ratio={16/9} className="bg-slate-100 border-b">
-                <div className="h-full w-full flex items-center justify-center text-muted-foreground">
-                  Slide Preview (Simplified)
-                </div>
-              </AspectRatio>
-              <textarea
-                value={pptContent}
-                onChange={(e) => setPptContent(e.target.value)}
-                className="w-full h-[300px] p-4 outline-none resize-none"
-                placeholder="Design your presentation here... (Copy and paste are disabled)"
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
-        
-        <div className="flex justify-end mt-4 space-x-2">
-          <Button variant="outline" onClick={onClose}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave}>
-            Save
+        </h3>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleSave}
+            disabled={isSaving}
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {isSaving ? "Saving..." : "Save"}
           </Button>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+      
+      <Card className="border border-gray-300">
+        <CardContent className="p-0">
+          <div className="border-b bg-gray-100 p-2">
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm">
+                File
+              </Button>
+              <Button variant="ghost" size="sm">
+                Edit
+              </Button>
+              <Button variant="ghost" size="sm">
+                View
+              </Button>
+              <Button variant="ghost" size="sm">
+                Insert
+              </Button>
+              <Button variant="ghost" size="sm">
+                Format
+              </Button>
+            </div>
+          </div>
+          
+          <div className="p-4 min-h-[300px] bg-white">
+            {type === 'word' ? (
+              <textarea
+                className="w-full h-[300px] p-2 border-none outline-none resize-none"
+                placeholder="Start typing your document here..."
+                value={content}
+                onChange={handleContentChange}
+              />
+            ) : (
+              <div className="w-full h-[300px] flex flex-col items-center justify-center bg-gray-50 border border-dashed">
+                <div className="text-center p-4 mb-4 bg-white border w-3/4">
+                  <h3 className="font-bold mb-2">Slide 1: Title Slide</h3>
+                  <textarea
+                    className="w-full h-[100px] p-2 border outline-none resize-none"
+                    placeholder="Click to add title..."
+                    value={content}
+                    onChange={handleContentChange}
+                  />
+                  <textarea
+                    className="w-full h-[50px] p-2 border outline-none resize-none mt-2"
+                    placeholder="Click to add subtitle..."
+                  />
+                </div>
+                <div className="text-center text-sm text-muted-foreground">
+                  Click to add notes
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+      
+      <div className="flex justify-between mt-2">
+        <div className="text-sm text-muted-foreground flex items-center">
+          <AlertTriangle className="h-4 w-4 mr-1 text-amber-500" />
+          Copy and paste functionality is disabled during assignments
+        </div>
+        <Button onClick={onClose} variant="outline" size="sm">
+          Close Editor
+        </Button>
+      </div>
+    </div>
   );
 };
 

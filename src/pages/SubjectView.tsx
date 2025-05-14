@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import NoteItem from '@/components/notes/NoteItem';
 import AddNoteForm from '@/components/notes/AddNoteForm';
@@ -49,7 +48,7 @@ const SubjectView = () => {
     const params = new URLSearchParams(location.search);
     params.set('tab', activeTab);
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
-  }, [activeTab]);
+  }, [activeTab, location.pathname, navigate]);
 
   if (!user || !subjectId) {
     navigate('/');

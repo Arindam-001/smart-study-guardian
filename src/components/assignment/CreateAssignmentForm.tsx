@@ -10,6 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Note } from '@/lib/interfaces/types';
+import { AlertTriangle, Zap } from 'lucide-react';
+import QuickAssignmentGenerator from '@/components/faculty/QuickAssignmentGenerator';
 
 interface CreateAssignmentFormProps {
   subjectId: string;
@@ -26,6 +28,7 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
   const [dueTime, setDueTime] = useState('23:59');
   const [isCreating, setIsCreating] = useState(false);
   const [duration, setDuration] = useState(60); // Default 60 minutes
+  const [showQuickGenerator, setShowQuickGenerator] = useState(false);
   
   const { subjects, createAssignment } = useAppContext();
   const { toast } = useToast();
@@ -99,10 +102,40 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
     }
   };
 
+  if (showQuickGenerator) {
+    return (
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <h3 className="text-lg font-medium">Quick 20-Question Assignment</h3>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowQuickGenerator(false)}
+          >
+            Back to Standard Form
+          </Button>
+        </div>
+        
+        <QuickAssignmentGenerator 
+          subjectId={subjectId} 
+          onAssignmentCreated={onComplete}
+        />
+      </div>
+    );
+  }
+
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-edu-primary">Create Assignment</CardTitle>
+        <Button 
+          variant="secondary" 
+          onClick={() => setShowQuickGenerator(true)}
+          className="flex items-center gap-1"
+        >
+          <Zap className="h-4 w-4" />
+          Quick 20-Question Assignment
+        </Button>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">

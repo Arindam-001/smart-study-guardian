@@ -13,6 +13,10 @@ export const useProctoring = (assignmentId: string) => {
   const streamRef = useRef<MediaStream | null>(null);
   const { user, addWarning } = useAppContext();
   const { toast } = useToast();
+  
+  // Face detection simulation variables
+  const facesDetectedRef = useRef<number>(1);
+  const detectionIntervalRef = useRef<any>(null);
 
   const createWarning = (reason: string) => {
     if (!user) return;
@@ -54,6 +58,27 @@ export const useProctoring = (assignmentId: string) => {
     }
   };
 
+  // Advanced face detection simulation
+  const simulateFaceDetection = () => {
+    // Randomly simulate multiple faces detected
+    if (Math.random() > 0.9 && !deviceDetected) {
+      facesDetectedRef.current = 2; 
+      setDeviceDetected(true);
+      createWarning("Multiple faces detected");
+    }
+    
+    // Randomly simulate no faces detected (left seat)
+    if (Math.random() > 0.95 && !hasWarning) {
+      facesDetectedRef.current = 0;
+      createWarning("No face detected - student may have left seat");
+    }
+    
+    // Most of the time, return to normal state
+    if (Math.random() > 0.7) {
+      facesDetectedRef.current = 1;
+    }
+  };
+
   useEffect(() => {
     const startVideo = async () => {
       try {
@@ -68,6 +93,12 @@ export const useProctoring = (assignmentId: string) => {
           videoRef.current.srcObject = stream;
           streamRef.current = stream;
         }
+
+        // Start face detection simulation
+        detectionIntervalRef.current = setInterval(() => {
+          simulateFaceDetection();
+        }, 5000);
+
       } catch (err) {
         console.error("Error accessing camera:", err);
         createWarning("Camera access denied");
@@ -133,6 +164,7 @@ export const useProctoring = (assignmentId: string) => {
 
     return () => {
       clearInterval(movementInterval);
+      clearInterval(detectionIntervalRef.current);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       document.removeEventListener('copy', handleCopy);
       document.removeEventListener('paste', handlePaste);
