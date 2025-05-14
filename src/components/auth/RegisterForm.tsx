@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,8 @@ import { useAppContext } from '@/lib/context';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { validateEmailDomain, getSemesterCountByProgram } from '@/lib/auth-service';
 import { supabase } from '@/lib/supabase';
+import { getItem, setItem, STORAGE_KEYS } from '@/lib/local-storage';
+import { User } from '@/lib/interfaces/types';
 
 export const RegisterForm = () => {
   const [name, setName] = useState('');
@@ -23,7 +24,6 @@ export const RegisterForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [maxSemesters, setMaxSemesters] = useState<number[]>([1, 2, 3, 4, 5, 6, 7, 8]);
   const { toast } = useToast();
-  const { registerUser } = useAppContext();
   const navigate = useNavigate();
 
   const validateEmail = (email: string) => {
@@ -112,71 +112,45 @@ export const RegisterForm = () => {
     }
 
     try {
-      // Register with enhanced user data including enrolled course
-      const userData = {
+      // Get existing users
+      const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
+      
+      // Check if user already exists
+      const existingUser = users.find(u => u.email === email || u.id === id);
+      if (existingUser) {
+        toast({
+          title: "Registration failed",
+          description: "This email or ID is already in use.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+        return;
+      }
+      
+      // Create new user
+      const newUser: User = {
+        id,
         name,
         email,
-        password,
-        id,
         role,
-        currentSemester,
+        currentSemester: role === 'student' ? currentSemester : 0,
+        accessibleSemesters: role === 'student' ? 
+          Array.from({ length: maxSemesters.length }, (_, i) => i + 1) : 
+          [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         phone,
         enrolledCourse: role === 'student' ? enrolledCourse : undefined
       };
       
-      // Try to persist to Supabase if available
-      try {
-        // First try to create auth user
-        const { error: authError } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-        
-        if (!authError) {
-          // Then create user in our users table
-          await supabase.from('users').insert({
-            id,
-            name,
-            email,
-            role,
-            current_semester: role === 'student' ? currentSemester : 0,
-            accessible_semesters: role === 'student' ? 
-              Array.from({ length: maxSemesters.length }, (_, i) => i + 1) : 
-              [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-            enrolled_course: role === 'student' ? enrolledCourse : null
-          });
-          
-          console.log('User registered in database');
-        }
-      } catch (dbError) {
-        console.log('Database storage failed, falling back to local storage', dbError);
-        // If database fails, continue with local storage approach
-      }
+      // Add user to users array
+      users.push(newUser);
+      setItem(STORAGE_KEYS.USERS, users);
       
-      const success = await registerUser(
-        userData.name, 
-        userData.email, 
-        userData.password, 
-        userData.id, 
-        userData.role, 
-        userData.currentSemester, 
-        userData.phone,
-        userData.enrolledCourse
-      );
+      toast({
+        title: "Registration successful",
+        description: "You can now log in with your credentials.",
+      });
       
-      if (success) {
-        toast({
-          title: "Registration successful",
-          description: "You can now log in with your credentials.",
-        });
-        navigate('/');
-      } else {
-        toast({
-          title: "Registration failed",
-          description: "This email or ID may already be in use.",
-          variant: "destructive"
-        });
-      }
+      navigate('/');
     } catch (error) {
       console.error("Registration error:", error);
       toast({

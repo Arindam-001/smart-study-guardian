@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -33,12 +32,6 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
     const verifyAuth = async () => {
       const authUser = getItem(STORAGE_KEYS.AUTH_USER, null);
       setIsChecking(false);
-      
-      // If no authUser found in localStorage, we're definitely not authenticated
-      if (!authUser) {
-        // Clean up any admin backup to prevent post-logout impersonation
-        localStorage.removeItem('ADMIN_USER_BACKUP');
-      }
     };
     
     verifyAuth();
@@ -49,8 +42,6 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   }
   
   if (!isAuthenticated) {
-    // Also clean up admin backup when redirecting due to not being authenticated
-    localStorage.removeItem('ADMIN_USER_BACKUP');
     return <Navigate to="/" replace />;
   }
   

@@ -57,30 +57,36 @@ export const LoginForm = () => {
     setIsLoading(true);
 
     try {
-      // Use the auth-core signIn function for better authentication handling
-      const user = await signIn(email, password);
+      // First try to get users from local storage to check if the user exists
+      const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
+      const user = users.find(u => u.email === email);
       
-      if (user) {
-        toast({
-          title: "Login successful",
-          description: "Welcome back!",
-        });
-        
-        // Check if there's a pending admin backup
-        const adminBackup = getItem('ADMIN_USER_BACKUP', null);
-        if (adminBackup) {
-          // Clear it if logging in normally
-          removeItem('ADMIN_USER_BACKUP');
-        }
-        
-        navigate('/dashboard');
-      } else {
+      if (!user) {
         toast({
           title: "Login failed",
-          description: "Invalid email or password. Please check your credentials and try again.",
+          description: "User not found. Please check your email or register a new account.",
           variant: "destructive"
         });
+        setIsLoading(false);
+        return;
       }
+      
+      // If user exists, try to authenticate
+      setItem(STORAGE_KEYS.AUTH_USER, user);
+      
+      toast({
+        title: "Login successful",
+        description: "Welcome back!",
+      });
+      
+      // Check if there's a pending admin backup
+      const adminBackup = getItem('ADMIN_USER_BACKUP', null);
+      if (adminBackup) {
+        // Clear it if logging in normally
+        removeItem('ADMIN_USER_BACKUP');
+      }
+      
+      navigate('/dashboard');
     } catch (error) {
       console.error("Login error:", error);
       toast({
