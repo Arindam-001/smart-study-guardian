@@ -38,3 +38,13 @@ export function removeItem(key: string): void {
     console.error(`Error removing ${key} from localStorage:`, error);
   }
 }
+
+// Clear all data from localStorage
+export function clearAllData(): void {
+  try {
+    localStorage.clear();
+    console.log('All localStorage data has been cleared');
+  } catch (error) {
+    console.error('Error clearing localStorage:', error);
+  }
+}
