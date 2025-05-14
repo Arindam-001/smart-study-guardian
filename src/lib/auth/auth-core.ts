@@ -69,6 +69,15 @@ export const signIn = async (email: string, password: string): Promise<User | nu
 
 export const signOut = async (): Promise<void> => {
   try {
+    // Check if this is an admin returning to their account
+    const adminUser = getItem('ADMIN_USER_BACKUP', null);
+    if (adminUser) {
+      // If admin was viewing someone else's account, restore admin and clear backup
+      setItem(STORAGE_KEYS.AUTH_USER, adminUser);
+      removeItem('ADMIN_USER_BACKUP');
+      return;
+    }
+    
     // Sign out from Supabase
     try {
       await supabase.auth.signOut();
@@ -78,6 +87,8 @@ export const signOut = async (): Promise<void> => {
     
     // Remove from local storage
     removeItem(STORAGE_KEYS.AUTH_USER);
+    // Also clear any admin backup
+    removeItem('ADMIN_USER_BACKUP');
   } catch (error) {
     console.error('Sign out error:', error);
   }

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAppContext } from '@/lib/context';
+import { getItem, STORAGE_KEYS } from '@/lib/local-storage';
+import { User } from '@/lib/interfaces/types';
 
 export const LoginForm = () => {
   const [email, setEmail] = useState('');
@@ -15,6 +17,14 @@ export const LoginForm = () => {
   const { toast } = useToast();
   const { login } = useAppContext();
   const navigate = useNavigate();
+
+  // Check for existing users on component mount
+  useEffect(() => {
+    const users = getItem<User[]>(STORAGE_KEYS.USERS, []);
+    if (users.length > 0) {
+      console.log(`Found ${users.length} registered users in storage`);
+    }
+  }, []);
 
   const validateEmail = (email: string) => {
     const emailRegex = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -43,6 +53,14 @@ export const LoginForm = () => {
           title: "Login successful",
           description: "Welcome back!",
         });
+        
+        // Check if there's a pending admin backup
+        const adminBackup = getItem('ADMIN_USER_BACKUP', null);
+        if (adminBackup) {
+          // Clear it if logging in normally
+          localStorage.removeItem('ADMIN_USER_BACKUP');
+        }
+        
         navigate('/dashboard');
       } else {
         toast({

@@ -13,6 +13,8 @@ import { UserCheck, BookOpen, AlertTriangle, ShieldAlert, User, Users, Trash2, L
 import SubjectManagement from '@/components/admin/SubjectManagement';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/lib/supabase';
+import { deleteUser } from '@/lib/auth/user-management';
+import { getItem, setItem, STORAGE_KEYS } from '@/lib/local-storage';
 
 const AdminDashboard = () => {
   const { 
@@ -52,28 +54,20 @@ const AdminDashboard = () => {
     setIsDeleting(true);
     
     try {
-      // First try to delete from database if connected
-      try {
-        await supabase.from('users').delete().eq('id', userId);
-      } catch (dbError) {
-        console.log('Database deletion failed, falling back to local deletion', dbError);
-      }
+      // Use the imported deleteUser function to handle both DB and local storage
+      const success = await deleteUser(userId);
       
-      // Remove from context/local storage by recreating the users array without the deleted user
-      const updatedUsers = users.filter(u => u.id !== userId);
-      
-      // We need to update the context's users array - let's create a temporary solution
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('USERS', JSON.stringify(updatedUsers));
+      if (success) {
+        toast({
+          title: "User Deleted",
+          description: "The user has been successfully removed from the system."
+        });
         
         // Force reload to update the context
         window.location.reload();
+      } else {
+        throw new Error("Failed to delete user");
       }
-      
-      toast({
-        title: "User Deleted",
-        description: "The user has been successfully removed from the system."
-      });
       
       setUserToDelete(null);
     } catch (error) {
@@ -91,11 +85,31 @@ const AdminDashboard = () => {
   const studentUsers = users.filter(u => u.role === 'student');
   const facultyUsers = users.filter(u => u.role === 'teacher');
 
-  // Admin should have access to all dashboards
+  // Improved admin view functionality to properly view as another user
   const goToUserDashboard = (userId: string, role: string) => {
-    // In a real app, this would handle impersonation logic
-    // For now, we just navigate to the dashboard with the user ID
-    window.location.href = `/${role === 'student' ? 'student' : 'faculty'}-dashboard?id=${userId}`;
+    // Find the user to view
+    const userToView = users.find(u => u.id === userId);
+    if (!userToView) {
+      toast({
+        title: "User not found",
+        description: "Could not find the selected user",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Store the current admin user for returning later
+    const adminUser = getItem(STORAGE_KEYS.AUTH_USER, null);
+    if (adminUser) {
+      setItem('ADMIN_USER_BACKUP', adminUser);
+    }
+    
+    // Set the viewed user as the current authenticated user
+    setItem(STORAGE_KEYS.AUTH_USER, userToView);
+    
+    // Navigate to the appropriate dashboard
+    const dashboardPath = role === 'student' ? '/student-dashboard' : '/faculty-dashboard';
+    window.location.href = dashboardPath;
   };
 
   return (
@@ -219,7 +233,7 @@ const AdminDashboard = () => {
                               {subjects.filter(s => s.teacherId === faculty.id).map(s => s.name).join(', ')}
                             </TableCell>
                             <TableCell className="space-x-2">
-                              <Button size="sm" onClick={() => goToUserDashboard(faculty.id, 'faculty')}>
+                              <Button size="sm" onClick={() => goToUserDashboard(faculty.id, 'teacher')}>
                                 View
                               </Button>
                               

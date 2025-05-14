@@ -16,6 +16,8 @@ import { cn } from '@/lib/utils';
 import { Bell, Menu } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User, UserRole } from '@/lib/interfaces/types';
+import ReturnToAdminPanel from './ReturnToAdminPanel';
+import { getItem } from '@/lib/local-storage';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -64,6 +66,7 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const isAdminViewing = !!getItem('ADMIN_USER_BACKUP', null);
 
   const handleLogout = async () => {
     await logout();
@@ -201,6 +204,9 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
         <h1 className="text-2xl font-bold mb-6">{title}</h1>
         {children}
       </main>
+      
+      {/* Show Return to Admin Panel if an admin is viewing another user's dashboard */}
+      {isAdminViewing && <ReturnToAdminPanel />}
       
       <footer className="bg-white border-t py-4">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
