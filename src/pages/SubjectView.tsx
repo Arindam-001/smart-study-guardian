@@ -11,15 +11,17 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, File, Shield, AlertTriangle } from 'lucide-react';
+import SubmissionsView from '@/components/faculty/SubmissionsView';
 
 const SubjectView = () => {
   const { semesterId, subjectId } = useParams<{ semesterId: string, subjectId: string }>();
   const navigate = useNavigate();
-  const { user, subjects, warnings } = useAppContext();
+  const { user, subjects, warnings, assignments } = useAppContext();
   const [activeTab, setActiveTab] = useState<string>('notes');
   const [showAddNote, setShowAddNote] = useState(false);
   const [showCreateAssignment, setShowCreateAssignment] = useState(false);
   const [showTakeAssignment, setShowTakeAssignment] = useState(false);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
   
   if (!user || !subjectId) {
     navigate('/');
@@ -44,6 +46,9 @@ const SubjectView = () => {
       </DashboardLayout>
     );
   }
+
+  // Get subject assignments
+  const subjectAssignments = assignments.filter(a => a.subjectId === subject.id);
 
   // Check if there are warnings for this subject
   const hasWarnings = warnings.some(w => w.assignmentId.startsWith(subjectId));
@@ -111,7 +116,7 @@ const SubjectView = () => {
                   >
                     <Shield size={24} />
                     <span className="font-medium">Create Assignment</span>
-                    <span className="text-xs text-white/80">Generate 20 questions from notes</span>
+                    <span className="text-xs text-white/80">Generate questions from notes</span>
                   </Button>
                   
                   <Button 
@@ -126,7 +131,7 @@ const SubjectView = () => {
                 </div>
               )}
               
-              {!isTeacherOrAdmin && !showTakeAssignment && (
+              {!isTeacherOrAdmin && !showTakeAssignment && subjectAssignments.length > 0 && (
                 <Button 
                   onClick={() => setShowTakeAssignment(true)} 
                   className="bg-edu-primary mb-4 h-auto py-6 flex flex-col items-center gap-2 w-full"
@@ -165,15 +170,71 @@ const SubjectView = () => {
                 />
               )}
               
+              {/* Subject Assignments List */}
               {!showCreateAssignment && !showTakeAssignment && (
-                <div className="text-center py-8 border rounded-lg bg-gray-50">
-                  <h3 className="text-lg font-medium text-edu-dark">No active assignments</h3>
-                  {isTeacherOrAdmin ? (
-                    <p className="text-muted-foreground mt-2">Create a new assignment for your students.</p>
+                <>
+                  {subjectAssignments.length > 0 ? (
+                    <div className="space-y-6">
+                      <h3 className="text-lg font-medium">Assignments</h3>
+                      <div className="grid grid-cols-1 gap-4">
+                        {subjectAssignments.map(assignment => (
+                          <div 
+                            key={assignment.id}
+                            className="border rounded-lg p-4 hover:bg-gray-50 transition-colors"
+                          >
+                            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-2">
+                              <div>
+                                <h4 className="font-medium">{assignment.title}</h4>
+                                <div className="text-sm text-muted-foreground">
+                                  Due: {assignment.dueDate.toLocaleString()}
+                                </div>
+                                <div className="text-sm">
+                                  {assignment.questions.length} questions • {assignment.duration} minutes
+                                </div>
+                              </div>
+                              <div className="flex flex-col gap-2">
+                                {isTeacherOrAdmin ? (
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => {
+                                      setSelectedAssignmentId(assignment.id);
+                                    }}
+                                  >
+                                    View Submissions
+                                  </Button>
+                                ) : (
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => {
+                                      setShowTakeAssignment(true);
+                                    }}
+                                  >
+                                    Take Assignment
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      
+                      {selectedAssignmentId && isTeacherOrAdmin && (
+                        <div className="mt-8">
+                          <SubmissionsView assignmentId={selectedAssignmentId} />
+                        </div>
+                      )}
+                    </div>
                   ) : (
-                    <p className="text-muted-foreground mt-2">Take an assignment to receive personalized recommendations.</p>
+                    <div className="text-center py-8 border rounded-lg bg-gray-50">
+                      <h3 className="text-lg font-medium text-edu-dark">No active assignments</h3>
+                      {isTeacherOrAdmin ? (
+                        <p className="text-muted-foreground mt-2">Create a new assignment for your students.</p>
+                      ) : (
+                        <p className="text-muted-foreground mt-2">No assignments available for this subject.</p>
+                      )}
+                    </div>
                   )}
-                </div>
+                </>
               )}
             </div>
           </TabsContent>

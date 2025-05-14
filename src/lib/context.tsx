@@ -9,6 +9,7 @@ import { getItem, setItem, STORAGE_KEYS, clearAllData } from './local-storage';
 import { getCurrentUser, signIn as authSignIn, signOut as authSignOut } from './auth';
 import { signUp as authSignUp } from './auth/user-management';
 import { clearAllOTPData } from './auth/password-reset';
+import { checkPlagiarism } from './utils';
 
 // Context
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -299,8 +300,27 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const assignment = assignments.find(a => a.id === assignmentId);
     if (!assignment) throw new Error("Assignment not found");
     
+    // Get the subject for this assignment to access notes
+    const subject = subjects.find(s => s.id === assignment.subjectId);
+    if (!subject) throw new Error("Subject not found");
+    
     let score = 0;
     const topicPerformance: Record<string, { correct: number, total: number }> = {};
+    
+    // Check plagiarism for each answer
+    let highestPlagiarismScore = 0;
+    const plagiarismDetails: PlagiarismDetail[] = [];
+    
+    // Combine all answers for overall plagiarism check
+    const combinedAnswers = Object.values(answers).join(' ');
+    const plagiarismResult = checkPlagiarism(combinedAnswers, subject.notes);
+    
+    highestPlagiarismScore = plagiarismResult.score;
+    plagiarismResult.details.forEach(detail => {
+      if (!plagiarismDetails.some(d => d.noteId === detail.noteId)) {
+        plagiarismDetails.push(detail);
+      }
+    });
     
     // Calculate score and track performance by topic
     assignment.questions.forEach(question => {
@@ -317,6 +337,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       topicPerformance[topic].total++;
       if (isCorrect) topicPerformance[topic].correct++;
     });
+    
+    // Add warning for high plagiarism
+    if (highestPlagiarismScore > 60) {
+      addWarning(
+        studentId, 
+        assignmentId,
+        `High plagiarism detected (${highestPlagiarismScore}%) in assignment submission`
+      );
+    }
     
     // Update assignment scores
     setAssignments(prev => prev.map(a => {
@@ -340,7 +369,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       answers,
       submittedAt: new Date(),
       score,
-      fileUrl
+      fileUrl,
+      plagiarismScore: highestPlagiarismScore,
+      plagiarismDetails: plagiarismDetails
     };
     
     setSubmissions(prev => [...prev, submission]);
@@ -525,3 +556,5 @@ export const useAppContext = () => {
 
 // Re-export the types from interfaces for components to use
 export type { Question, Note, User, Assignment, StudentPerformance, Resource };
+
+</edits_to_apply>

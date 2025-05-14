@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,13 +11,24 @@ import ManageResourcesTab from '@/components/faculty/ManageResourcesTab';
 import ManageNotesTab from '@/components/faculty/ManageNotesTab';
 import ManageAttendanceTab from '@/components/faculty/ManageAttendanceTab';
 import ViewStudentsTab from '@/components/faculty/ViewStudentsTab';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { UserCheck } from 'lucide-react';
 
 const FacultyDashboard = () => {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const impersonateId = searchParams.get('id');
+
   const { user, subjects, users, updateAttendance } = useAppContext();
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
+  
+  // Get the actual user - either the logged-in user or the impersonated user
+  const actualUser = impersonateId && user?.role === 'admin' 
+    ? users.find(u => u.id === impersonateId && u.role === 'teacher')
+    : user;
 
   // Get subjects taught by this faculty member
-  const taughtSubjects = subjects.filter(s => s.teacherId === user?.id);
+  const taughtSubjects = subjects.filter(s => s.teacherId === actualUser?.id);
   
   // Get all students
   const students = users.filter(u => u.role === 'student');
@@ -28,7 +40,7 @@ const FacultyDashboard = () => {
     }
   }, [subjects, taughtSubjects, selectedSubject]);
 
-  if (!user || user.role !== 'teacher') {
+  if (!actualUser || (actualUser.role !== 'teacher' && !impersonateId)) {
     return (
       <DashboardLayout title="Faculty Dashboard">
         <Card>
@@ -48,6 +60,15 @@ const FacultyDashboard = () => {
 
   return (
     <DashboardLayout title="Faculty Dashboard">
+      {impersonateId && user?.role === 'admin' && (
+        <Alert className="mb-6">
+          <UserCheck className="h-4 w-4" />
+          <AlertDescription>
+            You are viewing the faculty dashboard as {actualUser.name}. This is in admin impersonation mode.
+          </AlertDescription>
+        </Alert>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>

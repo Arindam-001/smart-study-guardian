@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Check, X, UserCheck, BookOpen, AlertTriangle, ShieldAlert, User, Users } from 'lucide-react';
+import { UserCheck, BookOpen, AlertTriangle, ShieldAlert, User, Users } from 'lucide-react';
+import SubjectManagement from '@/components/admin/SubjectManagement';
 
 const AdminDashboard = () => {
   const { 
@@ -18,14 +19,10 @@ const AdminDashboard = () => {
     subjects, 
     warnings, 
     semesters, 
-    grantSemesterAccess, 
-    assignTeacher, 
-    unassignTeacher 
+    grantSemesterAccess
   } = useAppContext();
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [selectedSemester, setSelectedSemester] = useState<number | null>(null);
-  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
-  const [selectedTeacher, setSelectedTeacher] = useState<string | null>(null);
   const { toast } = useToast();
   
   if (!user || user.role !== 'admin') {
@@ -61,33 +58,6 @@ const AdminDashboard = () => {
     });
   };
 
-  const handleAssignTeacher = () => {
-    if (!selectedSubject || !selectedTeacher) {
-      toast({
-        title: "Error",
-        description: "Please select both a subject and a teacher",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    assignTeacher(selectedSubject, selectedTeacher);
-    
-    toast({
-      title: "Teacher Assigned",
-      description: `Teacher has been assigned to the selected subject`
-    });
-  };
-
-  const handleUnassignTeacher = (subjectId: string) => {
-    unassignTeacher(subjectId);
-    
-    toast({
-      title: "Teacher Unassigned",
-      description: `Teacher has been unassigned from the subject`
-    });
-  };
-
   const studentUsers = users.filter(u => u.role === 'student');
   const facultyUsers = users.filter(u => u.role === 'teacher');
 
@@ -103,8 +73,12 @@ const AdminDashboard = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="students">
+              <Tabs defaultValue="subjects">
                 <TabsList className="mb-6">
+                  <TabsTrigger value="subjects" className="flex items-center gap-2">
+                    <BookOpen className="h-4 w-4" />
+                    <span>Subjects</span>
+                  </TabsTrigger>
                   <TabsTrigger value="students" className="flex items-center gap-2">
                     <User className="h-4 w-4" />
                     <span>Students</span>
@@ -112,10 +86,6 @@ const AdminDashboard = () => {
                   <TabsTrigger value="faculty" className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
                     <span>Faculty</span>
-                  </TabsTrigger>
-                  <TabsTrigger value="subjects" className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4" />
-                    <span>Subjects</span>
                   </TabsTrigger>
                   <TabsTrigger value="warnings" className="flex items-center gap-2 relative">
                     <AlertTriangle className="h-4 w-4" />
@@ -128,6 +98,10 @@ const AdminDashboard = () => {
                   </TabsTrigger>
                 </TabsList>
                 
+                <TabsContent value="subjects">
+                  <SubjectManagement />
+                </TabsContent>
+                
                 <TabsContent value="students">
                   <div className="space-y-4">
                     <Table>
@@ -138,6 +112,7 @@ const AdminDashboard = () => {
                           <TableHead>Email</TableHead>
                           <TableHead>Current Semester</TableHead>
                           <TableHead>Accessible Semesters</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -149,6 +124,13 @@ const AdminDashboard = () => {
                             <TableCell>{student.currentSemester}</TableCell>
                             <TableCell>
                               {student.accessibleSemesters.join(', ')}
+                            </TableCell>
+                            <TableCell>
+                              <Button size="sm" asChild>
+                                <a href={`/student-dashboard?id=${student.id}`}>
+                                  View
+                                </a>
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -166,6 +148,7 @@ const AdminDashboard = () => {
                           <TableHead>Name</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Subjects</TableHead>
+                          <TableHead>Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -177,98 +160,12 @@ const AdminDashboard = () => {
                             <TableCell>
                               {subjects.filter(s => s.teacherId === faculty.id).map(s => s.name).join(', ')}
                             </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="subjects">
-                  <div className="space-y-6">
-                    <div className="border p-4 rounded-md">
-                      <h3 className="text-lg font-medium mb-4">Assign Teacher to Subject</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="subject-select">Select Subject</Label>
-                          <Select 
-                            value={selectedSubject || ''} 
-                            onValueChange={setSelectedSubject}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a subject" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {subjects.map(subject => (
-                                <SelectItem key={subject.id} value={subject.id}>
-                                  {subject.name} (Semester {subject.semesterId})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="space-y-2">
-                          <Label htmlFor="teacher-select">Select Teacher</Label>
-                          <Select 
-                            value={selectedTeacher || ''} 
-                            onValueChange={setSelectedTeacher}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a teacher" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {facultyUsers.map(teacher => (
-                                <SelectItem key={teacher.id} value={teacher.id}>
-                                  {teacher.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        
-                        <div className="flex items-end">
-                          <Button 
-                            onClick={handleAssignTeacher} 
-                            className="w-full"
-                          >
-                            Assign Teacher
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ID</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Semester</TableHead>
-                          <TableHead>Teacher</TableHead>
-                          <TableHead>Resources</TableHead>
-                          <TableHead>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {subjects.map(subject => (
-                          <TableRow key={subject.id}>
-                            <TableCell className="font-medium">{subject.id}</TableCell>
-                            <TableCell>{subject.name}</TableCell>
-                            <TableCell>{subject.semesterId}</TableCell>
                             <TableCell>
-                              {users.find(u => u.id === subject.teacherId)?.name || 'Unassigned'}
-                            </TableCell>
-                            <TableCell>{subject.resources?.length || 0} resources</TableCell>
-                            <TableCell>
-                              {subject.teacherId && (
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm"
-                                  onClick={() => handleUnassignTeacher(subject.id)}
-                                >
-                                  Unassign
-                                </Button>
-                              )}
+                              <Button size="sm" asChild>
+                                <a href={`/faculty-dashboard?id=${faculty.id}`}>
+                                  View
+                                </a>
+                              </Button>
                             </TableCell>
                           </TableRow>
                         ))}

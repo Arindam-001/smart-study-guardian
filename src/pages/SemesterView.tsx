@@ -1,70 +1,99 @@
 
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import SubjectCard from '@/components/subject/SubjectCard';
 import { useAppContext } from '@/lib/context';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import SubjectManagement from '@/components/admin/SubjectManagement';
 
 const SemesterView = () => {
   const { semesterId } = useParams<{ semesterId: string }>();
-  const navigate = useNavigate();
   const { user, subjects } = useAppContext();
   
-  if (!user) {
-    navigate('/');
-    return null;
-  }
-
-  const isAccessible = (sid: number) => {
-    if (user.role === 'admin' || user.role === 'teacher') {
-      return true;
-    }
-    return user.accessibleSemesters.includes(sid);
-  };
-
-  // Parse semesterId as number
-  const currentSemesterId = parseInt(semesterId || '1');
-  
-  if (!isAccessible(currentSemesterId)) {
+  if (!semesterId || !user) {
     return (
-      <DashboardLayout title={`Semester ${semesterId}`}>
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Access Denied</AlertTitle>
-          <AlertDescription>
-            You do not have access to this semester. Please contact your administrator.
-          </AlertDescription>
-        </Alert>
+      <DashboardLayout title="Semester Not Found">
+        <div className="text-center py-8">
+          <h3 className="text-xl font-medium text-edu-dark">Semester ID is missing</h3>
+          <Button 
+            asChild
+            variant="outline" 
+            className="mt-4"
+          >
+            <Link to="/dashboard">Go Back to Dashboard</Link>
+          </Button>
+        </div>
       </DashboardLayout>
     );
   }
 
-  // Filter subjects by semester
-  const semesterSubjects = subjects.filter(subject => subject.semesterId === currentSemesterId);
+  const numericSemesterId = Number(semesterId);
+  
+  // Check if user has access to this semester
+  const hasAccess = 
+    user.role === 'admin' || 
+    user.role === 'teacher' || 
+    user.accessibleSemesters.includes(numericSemesterId);
+  
+  // Get subjects for this semester
+  const semesterSubjects = subjects.filter(s => s.semesterId === numericSemesterId);
+
+  // For students, filter accessible subjects
+  const accessibleSubjects = user.role === 'student' 
+    ? semesterSubjects
+    : semesterSubjects;
+  
+  const isAdminOrTeacher = user.role === 'admin' || user.role === 'teacher';
 
   return (
     <DashboardLayout title={`Semester ${semesterId}`}>
-      {semesterSubjects.length === 0 ? (
-        <div className="text-center py-8">
-          <h3 className="text-xl font-medium text-edu-dark">No subjects available for this semester yet.</h3>
-          {user.role !== 'student' && (
-            <p className="text-muted-foreground mt-2">As an instructor, you can add subjects to this semester.</p>
-          )}
+      <Button 
+        asChild
+        variant="outline" 
+        className="mb-6"
+      >
+        <Link to="/dashboard" className="flex items-center gap-2">
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Link>
+      </Button>
+      
+      {!hasAccess ? (
+        <div className="text-center py-8 border rounded-lg bg-red-50">
+          <h3 className="text-xl font-medium text-red-500">Access Denied</h3>
+          <p className="text-muted-foreground mt-2">
+            You do not have access to Semester {semesterId}.
+          </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {semesterSubjects.map((subject) => (
-            <SubjectCard 
-              key={subject.id} 
-              id={subject.id} 
-              name={subject.name} 
-              semesterId={subject.semesterId} 
-              noteCount={subject.notes.length}
-            />
-          ))}
-        </div>
+        <>
+          {isAdminOrTeacher && (
+            <div className="mb-8">
+              <SubjectManagement semesterId={numericSemesterId} />
+            </div>
+          )}
+          
+          <h2 className="text-xl font-semibold mb-6">Available Subjects</h2>
+          
+          {accessibleSubjects.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {accessibleSubjects.map(subject => (
+                <SubjectCard key={subject.id} subject={subject} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8 border rounded-lg bg-gray-50">
+              <h3 className="text-lg font-medium text-edu-dark">No subjects available</h3>
+              {isAdminOrTeacher && (
+                <p className="text-muted-foreground mt-2">
+                  Use the subject management panel above to add subjects to this semester.
+                </p>
+              )}
+            </div>
+          )}
+        </>
       )}
     </DashboardLayout>
   );

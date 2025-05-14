@@ -8,4 +8,13 @@ export interface AssignmentSubmission {
   score?: number;
   feedback?: string;
   fileUrl?: string;
+  plagiarismScore?: number;
+  plagiarismDetails?: PlagiarismDetail[];
+}
+
+export interface PlagiarismDetail {
+  noteId: string;
+  noteName: string;
+  matchedText: string;
+  similarity: number; // Percentage of similarity
 }

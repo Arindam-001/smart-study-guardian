@@ -23,6 +23,7 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
   const [dueDate, setDueDate] = useState<Date | undefined>(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   );
+  const [dueTime, setDueTime] = useState('23:59');
   const [isCreating, setIsCreating] = useState(false);
   const [duration, setDuration] = useState(60); // Default 60 minutes
   
@@ -30,6 +31,10 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
   const { toast } = useToast();
   
   const subject = subjects.find(s => s.id === subjectId);
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDueTime(e.target.value);
+  };
   
   const handleCreateAssignment = () => {
     if (!title.trim()) {
@@ -40,17 +45,34 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
       });
       return;
     }
+
+    if (selectedNotes.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select at least one note to generate questions from",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsCreating(true);
     
     try {
+      // Combine date and time
+      let finalDueDate = dueDate;
+      if (dueDate && dueTime) {
+        const [hours, minutes] = dueTime.split(':').map(Number);
+        finalDueDate = new Date(dueDate);
+        finalDueDate.setHours(hours, minutes);
+      }
+      
       // Get the notes content to use for generating questions
       const notesToUse = subject?.notes.filter(note => 
         selectedNotes.includes(note.id)
       ) || [];
       
       // Create assignment with the specified parameters
-      const assignment = createAssignment(subjectId, title, dueDate, duration, notesToUse);
+      const assignment = createAssignment(subjectId, title, finalDueDate, duration, notesToUse);
       
       toast({
         title: "Success",
@@ -115,6 +137,18 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
           </div>
           
           <div className="space-y-2">
+            <Label htmlFor="due-time">Due Time</Label>
+            <Input
+              id="due-time"
+              type="time"
+              value={dueTime}
+              onChange={handleTimeChange}
+            />
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
             <Label htmlFor="duration">Duration (minutes)</Label>
             <Input 
               id="duration"
@@ -125,10 +159,28 @@ const CreateAssignmentForm: React.FC<CreateAssignmentFormProps> = ({ subjectId, 
               onChange={(e) => setDuration(Number(e.target.value))}
             />
           </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="due-date-display">Assignment Due</Label>
+            <div className="bg-gray-100 px-4 py-2 rounded border border-gray-200">
+              {dueDate ? (
+                <span>
+                  {dueDate.toLocaleDateString()} at {dueTime}
+                </span>
+              ) : (
+                <span className="text-muted-foreground">Select a date and time</span>
+              )}
+            </div>
+          </div>
         </div>
         
         <div className="space-y-2">
-          <Label>Select Notes to Generate Questions From</Label>
+          <Label className="flex items-center justify-between">
+            <span>Select Notes to Generate Questions From</span>
+            <span className="text-xs text-muted-foreground">
+              Selected: {selectedNotes.length}
+            </span>
+          </Label>
           {subject && subject.notes.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
               {subject.notes.map(note => (
