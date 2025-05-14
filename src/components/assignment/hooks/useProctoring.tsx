@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useAppContext } from '@/lib/context';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 
 export const useProctoring = (assignmentId: string) => {
   const [hasWarning, setHasWarning] = useState(false);

@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Assignment } from '@/lib/interfaces/types';
-import { useToast } from '@/hooks/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { useProctoring } from './hooks/useProctoring';
 import ProctoringMonitor from './proctoring/ProctoringMonitor';
 import QuestionDisplay from './questions/QuestionDisplay';
