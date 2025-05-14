@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation, Link } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import NoteItem from '@/components/notes/NoteItem';
@@ -15,16 +15,17 @@ import SubmissionsView from '@/components/faculty/SubmissionsView';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Assignment, Resource } from '@/lib/interfaces/types';
 import AssignmentEditor from '@/components/assignment/AssignmentEditor';
+import { useToast } from '@/components/ui/use-toast';
 
 const SubjectView = () => {
   const { semesterId, subjectId } = useParams<{ semesterId: string, subjectId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   
-  // Use URLSearchParams but don't recreate it on every render
-  const [searchParams, setSearchParams] = useState(new URLSearchParams(location.search));
-  const tabParam = searchParams.get('tab');
-  const assignmentIdParam = searchParams.get('assignmentId');
+  // Get tab and assignmentId from URL without recreating URLSearchParams on every render
+  const tabParam = new URLSearchParams(location.search).get('tab');
+  const assignmentIdParam = new URLSearchParams(location.search).get('assignmentId');
   
   const { user, subjects, warnings, assignments, deleteNote, deleteResource } = useAppContext();
   const [activeTab, setActiveTab] = useState<string>(tabParam || 'notes');
@@ -34,30 +35,35 @@ const SubjectView = () => {
   const [showAssignmentEditor, setShowAssignmentEditor] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(assignmentIdParam);
   
-  // Update searchParams when location changes
-  useEffect(() => {
-    setSearchParams(new URLSearchParams(location.search));
-  }, [location.search]);
+  // Handle URL params with a memoized callback to prevent unnecessary re-renders
+  const updateUrlParams = useCallback((tab: string, assignmentId?: string | null) => {
+    const params = new URLSearchParams();
+    params.set('tab', tab);
+    if (assignmentId) {
+      params.set('assignmentId', assignmentId);
+    }
+    // Use replace: true to avoid adding to history stack
+    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+  }, [navigate, location.pathname]);
   
-  // Effect to handle URL params
+  // Effect to handle URL params on initial load and URL changes
   useEffect(() => {
-    if (tabParam) {
+    if (tabParam && tabParam !== activeTab) {
       setActiveTab(tabParam);
     }
     
     if (assignmentIdParam) {
       setSelectedAssignmentId(assignmentIdParam);
-      setShowTakeAssignment(true);
+      if (tabParam === 'assignments') {
+        setShowTakeAssignment(true);
+      }
     }
-  }, [tabParam, assignmentIdParam]);
+  }, [tabParam, assignmentIdParam, activeTab]);
   
-  // Update URL when tab changes - using navigate with replace option to avoid history stack issues
+  // Handle tab change with the memoized URL updater
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', value);
-    // Use replace: true to avoid adding to history stack which was causing refresh loops
-    navigate(`${location.pathname}?${params.toString()}`, { replace: true });
+    updateUrlParams(value, value === 'assignments' ? selectedAssignmentId : null);
   };
 
   if (!user || !subjectId) {
@@ -86,8 +92,8 @@ const SubjectView = () => {
 
   // Get subject assignments
   const subjectAssignments = assignments.filter(a => a.subjectId === subject.id);
-  const selectedAssignment = assignmentIdParam ? 
-    subjectAssignments.find(a => a.id === assignmentIdParam) : 
+  const selectedAssignment = selectedAssignmentId ? 
+    subjectAssignments.find(a => a.id === selectedAssignmentId) : 
     subjectAssignments[0];
 
   // Check if there are warnings for this subject
@@ -103,6 +109,10 @@ const SubjectView = () => {
   const handleDeleteNote = (noteId: string) => {
     if (confirm('Are you sure you want to delete this note?')) {
       deleteNote(subject.id, noteId);
+      toast({
+        title: "Note deleted",
+        description: "The note has been successfully deleted."
+      });
     }
   };
   
@@ -110,6 +120,10 @@ const SubjectView = () => {
   const handleDeleteResource = (resourceId: string) => {
     if (confirm('Are you sure you want to delete this resource?')) {
       deleteResource(subject.id, resourceId);
+      toast({
+        title: "Resource deleted",
+        description: "The resource has been successfully deleted."
+      });
     }
   };
 
@@ -283,6 +297,7 @@ const SubjectView = () => {
                   onClick={() => {
                     setShowTakeAssignment(true);
                     setSelectedAssignmentId(subjectAssignments[0].id);
+                    updateUrlParams('assignments', subjectAssignments[0].id);
                   }}
                   className="bg-edu-primary mb-4 h-auto py-6 flex flex-col items-center gap-2 w-full"
                 >
@@ -297,7 +312,13 @@ const SubjectView = () => {
               {showCreateAssignment && (
                 <CreateAssignmentForm 
                   subjectId={subject.id} 
-                  onComplete={() => setShowCreateAssignment(false)}
+                  onComplete={() => {
+                    setShowCreateAssignment(false);
+                    toast({
+                      title: "Assignment created",
+                      description: "The assignment has been successfully created."
+                    });
+                  }}
                 />
               )}
               
@@ -307,6 +328,11 @@ const SubjectView = () => {
                   onComplete={() => {
                     setShowTakeAssignment(false);
                     setSelectedAssignmentId(null);
+                    updateUrlParams('assignments');
+                    toast({
+                      title: "Assignment submitted",
+                      description: "Your assignment has been submitted successfully."
+                    });
                   }}
                 />
               )}
@@ -346,6 +372,7 @@ const SubjectView = () => {
                                       size="sm" 
                                       onClick={() => {
                                         setSelectedAssignmentId(assignment.id);
+                                        updateUrlParams('assignments', assignment.id);
                                       }}
                                     >
                                       View Submissions
@@ -357,6 +384,7 @@ const SubjectView = () => {
                                     onClick={() => {
                                       setSelectedAssignmentId(assignment.id);
                                       setShowTakeAssignment(true);
+                                      updateUrlParams('assignments', assignment.id);
                                     }}
                                   >
                                     Take Assignment

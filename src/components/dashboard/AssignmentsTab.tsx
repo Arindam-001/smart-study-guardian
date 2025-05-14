@@ -1,6 +1,6 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useCallback } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Subject, Assignment } from '@/lib/interfaces/types';
@@ -17,11 +17,17 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   currentSemester
 }) => {
   const { assignments } = useAppContext();
+  const navigate = useNavigate();
   
   // Filter assignments for the current semester subjects
   const currentAssignments = assignments.filter(a => 
     currentSemesterSubjects.some(s => s.id === a.subjectId)
   );
+  
+  // Safe navigation to subject page with assignment tab pre-selected
+  const navigateToAssignment = useCallback((subjectId: string, semesterId: number, assignmentId: string) => {
+    navigate(`/semester/${semesterId}/subject/${subjectId}?tab=assignments&assignmentId=${assignmentId}`, { replace: true });
+  }, [navigate]);
 
   return (
     <div className="space-y-4">
@@ -57,11 +63,9 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                             <Button 
                               variant="outline" 
                               size="sm" 
-                              asChild
+                              onClick={() => navigateToAssignment(subject.id, subject.semesterId, assignment.id)}
                             >
-                              <Link to={`/semester/${subject.semesterId}/subject/${subject.id}?tab=assignments&assignmentId=${assignment.id}`}>
-                                Take Assignment
-                              </Link>
+                              Take Assignment
                             </Button>
                           </div>
                         ))}
@@ -73,11 +77,9 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
                         </p>
                         <Button 
                           variant="outline" 
-                          asChild
+                          onClick={() => navigate(`/semester/${subject.semesterId}/subject/${subject.id}`, { replace: true })}
                         >
-                          <Link to={`/semester/${subject.semesterId}/subject/${subject.id}`}>
-                            View Subject Details
-                          </Link>
+                          View Subject Details
                         </Button>
                       </div>
                     )}
