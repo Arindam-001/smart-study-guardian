@@ -20,7 +20,7 @@ type ToasterToast = ToastOptions & {
 
 type ToasterContextValue = {
   toasts: ToasterToast[];
-  toast: (options: ToastOptions) => void;
+  toast: (options: ToastOptions) => string;
   dismiss: (id: string) => void;
 };
 
