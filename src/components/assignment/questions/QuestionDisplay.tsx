@@ -20,16 +20,26 @@ const QuestionDisplay = ({
       
       {question.type === 'multiple-choice' && question.options && (
         <div className="space-y-2">
-          {question.options.map((option, idx) => (
-            <label key={idx} className="flex items-center space-x-2">
-              <input 
-                type="radio" 
-                checked={answer === option}
-                onChange={() => onAnswerChange(option)}
-              />
-              <span>{option}</span>
-            </label>
-          ))}
+          {question.options.map((option, idx) => {
+            // Handle both string options and object options with id and text properties
+            const optionValue = typeof option === 'object' && option !== null ? 
+              (option.id || option.text || '') : 
+              option;
+            const optionText = typeof option === 'object' && option !== null ? 
+              (option.text || option.id || '') : 
+              option;
+            
+            return (
+              <label key={idx} className="flex items-center space-x-2">
+                <input 
+                  type="radio" 
+                  checked={answer === optionValue}
+                  onChange={() => onAnswerChange(optionValue)}
+                />
+                <span>{optionText}</span>
+              </label>
+            );
+          })}
         </div>
       )}
       
