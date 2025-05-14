@@ -16,33 +16,32 @@ const SubjectView = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Get tab and assignmentId from URL without recreating URLSearchParams on every render
   const searchParams = new URLSearchParams(location.search);
-  const tabParam = searchParams.get('tab');
+  const tabParam = searchParams.get('tab') || 'notes';
   const assignmentIdParam = searchParams.get('assignmentId');
   
   const { user, subjects, warnings } = useAppContext();
-  const [activeTab, setActiveTab] = useState<string>(tabParam || 'notes');
+  const [activeTab, setActiveTab] = useState<string>(tabParam);
   const [showTakeAssignment, setShowTakeAssignment] = useState(false);
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(assignmentIdParam);
-  
-  // Handle URL params with a memoized callback to prevent unnecessary re-renders
+
+  // Update URL when tab changes
   const updateUrlParams = useCallback((tab: string, assignmentId?: string | null) => {
     const params = new URLSearchParams();
     params.set('tab', tab);
     if (assignmentId) {
       params.set('assignmentId', assignmentId);
     }
-    // Use replace: true to avoid adding to history stack
     navigate(`${location.pathname}?${params.toString()}`, { replace: true });
   }, [navigate, location.pathname]);
-  
-  // Effect to sync URL params with local state
+
+  // Sync URL params with state
   useEffect(() => {
-    if (tabParam && ['notes', 'resources', 'assignments'].includes(tabParam)) {
+    const validTabs = ['notes', 'resources', 'assignments'];
+    if (tabParam && validTabs.includes(tabParam)) {
       setActiveTab(tabParam);
     }
-    
+
     if (assignmentIdParam) {
       setSelectedAssignmentId(assignmentIdParam);
       if (tabParam === 'assignments') {
@@ -50,12 +49,9 @@ const SubjectView = () => {
       }
     }
   }, [tabParam, assignmentIdParam]);
-  
-  // Handle tab change with the memoized URL updater
+
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    
-    // Update URL params based on selected tab
     if (value === 'assignments' && selectedAssignmentId) {
       updateUrlParams(value, selectedAssignmentId);
     } else {
@@ -74,13 +70,12 @@ const SubjectView = () => {
     return <SubjectNotFound semesterId={semesterId} />;
   }
 
-  // Check if there are warnings for this subject
   const hasWarnings = warnings.some(w => w.assignmentId && w.assignmentId.startsWith(subjectId));
-  
+
   return (
     <DashboardLayout title={subject.name}>
       <div className="mb-6">
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <Tabs defaultValue={activeTab} onValueChange={handleTabChange}>
           <TabsList>
             <TabsTrigger value="notes" className="flex items-center gap-2">
               <BookOpen size={16} />
