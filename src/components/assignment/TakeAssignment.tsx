@@ -1,17 +1,12 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Assignment } from '@/lib/interfaces/types';
 import { useProctoring } from './hooks/useProctoring';
-import ProctoringMonitor from './proctoring/ProctoringMonitor';
-import { useAppContext } from '@/lib/context';
-import AssignmentTabs from './tabs/AssignmentTabs';
-import AssignmentResults from './results/AssignmentResults';
-import ViolationWarning from './warnings/ViolationWarning';
+import { useSessionUser } from './hooks/useSessionUser';
 import { useAssignmentSubmission } from './hooks/useAssignmentSubmission';
-import QuestionSection from './questions/QuestionSection';
-import { getItem, setItem, STORAGE_KEYS } from '@/lib/local-storage';
+import AssignmentContent from './main/AssignmentContent';
+import AssignmentSidebar from './main/AssignmentSidebar';
+import AssignmentResults from './results/AssignmentResults';
 
 interface TakeAssignmentProps {
   assignment: Assignment;
@@ -24,26 +19,11 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
   const [file, setFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<string>('questions');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { user, setUser } = useAppContext();
   
-  // Check for session storage auth data if no user is found
-  useEffect(() => {
-    if (!user) {
-      const sessionUser = sessionStorage.getItem('TEMP_AUTH_USER');
-      if (sessionUser) {
-        try {
-          const parsedUser = JSON.parse(sessionUser);
-          setUser(parsedUser);
-          setItem(STORAGE_KEYS.AUTH_USER, parsedUser);
-          // Clean up session storage
-          sessionStorage.removeItem('TEMP_AUTH_USER');
-        } catch (err) {
-          console.error('Error parsing session user:', err);
-        }
-      }
-    }
-  }, [user, setUser]);
+  // Use the session user hook
+  const { user } = useSessionUser();
   
+  // Use proctoring hook
   const {
     videoRef,
     streamRef,
@@ -55,6 +35,7 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
     createWarning
   } = useProctoring(assignment.id);
 
+  // Use submission hook
   const {
     isSubmitting,
     submitted,
@@ -151,69 +132,32 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
   return (
     <div className="flex flex-col lg:flex-row gap-4">
       <div className="w-full lg:w-3/4">
-        <Card className="mb-4">
-          <CardHeader>
-            <CardTitle className="text-edu-primary">
-              {assignment.title}
-              {activeTab === 'questions' && (
-                <span className="ml-2">
-                  - Question {currentQuestionIndex + 1} of {assignment.questions.length}
-                </span>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AssignmentTabs
-              activeTab={activeTab}
-              setActiveTab={setActiveTab}
-              currentQuestion={currentQuestion}
-              currentAnswer={answers[currentQuestion.id] || ''}
-              onAnswerChange={handleAnswerChange}
-              isLastQuestion={currentQuestionIndex === assignment.questions.length - 1}
-              fileInputRef={fileInputRef}
-              onFileChange={handleFileChange}
-            />
-          </CardContent>
-          <CardFooter>
-            {activeTab === 'questions' ? (
-              <QuestionSection 
-                questions={assignment.questions}
-                currentQuestionIndex={currentQuestionIndex}
-                currentQuestion={currentQuestion}
-                answers={answers}
-                onAnswerChange={handleAnswerChange}
-                onNextQuestion={handleNextQuestion}
-                onPrevQuestion={handlePrevQuestion}
-                onSelectQuestion={setCurrentQuestionIndex}
-                isSubmitting={isSubmitting}
-                fileInputRef={fileInputRef}
-                onFileChange={handleFileChange}
-                onSubmit={() => handleSubmit(false)}
-              />
-            ) : (
-              <div className="w-full flex justify-end">
-                <Button 
-                  onClick={() => setActiveTab('questions')} 
-                  variant="outline"
-                >
-                  Back to Questions
-                </Button>
-              </div>
-            )}
-          </CardFooter>
-        </Card>
+        <AssignmentContent 
+          assignment={assignment}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          currentQuestion={currentQuestion}
+          currentQuestionIndex={currentQuestionIndex}
+          answers={answers}
+          handleAnswerChange={handleAnswerChange}
+          fileInputRef={fileInputRef}
+          handleFileChange={handleFileChange}
+          handleNextQuestion={handleNextQuestion}
+          handlePrevQuestion={handlePrevQuestion}
+          setCurrentQuestionIndex={setCurrentQuestionIndex}
+          isSubmitting={isSubmitting}
+          handleSubmit={handleSubmit}
+        />
       </div>
 
       <div className="w-full lg:w-1/4">
-        <ProctoringMonitor 
+        <AssignmentSidebar 
           videoRef={videoRef}
           movementCount={movementCount}
           hasWarning={hasWarning}
           tabSwitchCount={tabSwitchCount}
           deviceDetected={deviceDetected}
         />
-        
-        <ViolationWarning count={tabSwitchCount} />
       </div>
     </div>
   );
