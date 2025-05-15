@@ -10,6 +10,7 @@ import {
   NavigationMenuItem,
   NavigationMenuList,
   NavigationMenuTrigger,
+  NavigationMenuLink,
 } from '@/components/ui/navigation-menu';
 import { cn } from '@/lib/utils';
 import { Bell, Menu } from 'lucide-react';
@@ -125,17 +126,15 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
                 <NavigationMenuList>
                   {routes.map((route) => (
                     <NavigationMenuItem key={route.path}>
-                      <NavigationMenuLink
-                        asChild
+                      <Link
+                        to={route.path}
                         className={cn(
                           "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus:outline-none focus:bg-accent focus:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none bg-background hover:bg-accent hover:text-accent-foreground px-4 py-2",
                           location.pathname.startsWith(route.path) ? "bg-accent text-accent-foreground" : ""
                         )}
                       >
-                        <Link to={route.path}>
-                          {route.label}
-                        </Link>
-                      </NavigationMenuLink>
+                        {route.label}
+                      </Link>
                     </NavigationMenuItem>
                   ))}
                 </NavigationMenuList>
