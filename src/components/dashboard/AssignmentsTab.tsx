@@ -19,12 +19,11 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   const { assignments } = useAppContext();
   const navigate = useNavigate();
   
-  // Updated navigation function to go directly to the assignment taking view
+  // Updated navigation function to go directly to the assignment view
   const navigateToAssignment = useCallback((subjectId: string, semesterId: number, assignmentId: string) => {
-    // Navigate directly to take assignment view with the assignment tab already selected
-    navigate(`/semester/${semesterId}/subject/${subjectId}?tab=assignments&assignmentId=${assignmentId}`, { 
+    // Navigate directly to subject page with only the assignmentId parameter
+    navigate(`/semester/${semesterId}/subject/${subjectId}?assignmentId=${assignmentId}`, { 
       state: { 
-        tabChange: true,
         takeAssignment: true // Add this flag to indicate we want to take the assignment
       } 
     });

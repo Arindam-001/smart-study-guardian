@@ -5,7 +5,6 @@ import { File, CheckCircle } from 'lucide-react';
 import { Assignment } from '@/lib/interfaces/types';
 import { useToast } from '@/components/ui/use-toast';
 import { useAppContext } from '@/lib/context';
-import { useNavigate } from 'react-router-dom';
 
 interface StudentAssignmentCtaProps {
   assignments: Assignment[];
@@ -17,7 +16,6 @@ const StudentAssignmentCta: React.FC<StudentAssignmentCtaProps> = ({
   onTakeAssignment
 }) => {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const { user, submissions } = useAppContext();
   const [submittedAssignments, setSubmittedAssignments] = useState<string[]>([]);
   
@@ -46,13 +44,8 @@ const StudentAssignmentCta: React.FC<StudentAssignmentCtaProps> = ({
       return;
     }
     
-    // Use the onTakeAssignment prop to open the assignment in the same tab
+    // Use the onTakeAssignment prop to open the assignment
     onTakeAssignment(assignment.id);
-    
-    toast({
-      title: "Assignment opened",
-      description: "Complete the assignment to get personalized recommendations."
-    });
   };
   
   return (

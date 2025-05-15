@@ -2,11 +2,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { useAppContext } from '@/lib/context';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, File, AlertTriangle, FileText } from 'lucide-react';
-import NotesTab from '@/components/subjects/NotesTab';
-import ResourcesTab from '@/components/subjects/ResourcesTab';
+import { AlertTriangle } from 'lucide-react';
 import AssignmentsTab from '@/components/subjects/AssignmentsTab';
 import SubjectNotFound from '@/components/subjects/SubjectNotFound';
 
@@ -15,17 +12,13 @@ const SubjectView = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Get tab and assignmentId from URL params
+  // Get assignmentId from URL params
   const searchParams = new URLSearchParams(location.search);
-  const tabParam = searchParams.get('tab');
   const assignmentIdParam = searchParams.get('assignmentId');
   const modeParam = searchParams.get('mode');
   
   const { user, subjects, warnings } = useAppContext();
   
-  // Initialize activeTab state with URL parameter or default to 'notes'
-  const initialTab = tabParam && ['notes', 'resources', 'assignments'].includes(tabParam) ? tabParam : 'notes';
-  const [activeTab, setActiveTab] = useState<string>(initialTab);
   const [showTakeAssignment, setShowTakeAssignment] = useState(modeParam === 'take');
   const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(assignmentIdParam);
   
@@ -56,13 +49,6 @@ const SubjectView = () => {
     // Start with current params to preserve any other query params
     const params = new URLSearchParams(location.search);
     
-    // Update the params we care about
-    if (tab) {
-      params.set('tab', tab);
-    } else {
-      params.delete('tab');
-    }
-    
     if (assignmentId) {
       params.set('assignmentId', assignmentId);
     } else if (params.has('assignmentId') && !assignmentId) {
@@ -79,32 +65,9 @@ const SubjectView = () => {
     );
   }, [navigate, location]);
   
-  // Handle tab change without causing full page reload
-  const handleTabChange = (value: string) => {
-    console.log(`Tab change requested to: ${value}`);
-    setActiveTab(value);
-    
-    // Update URL with appropriate parameters
-    if (value === 'assignments' && selectedAssignmentId) {
-      updateUrlParams(value, selectedAssignmentId);
-    } else {
-      updateUrlParams(value);
-    }
-  };
-  
-  // Keep tab state in sync with URL params
+  // Keep state in sync with URL params
   useEffect(() => {
     const locationState = location.state as any;
-    const isFromNavigation = locationState && locationState.tabChange;
-    
-    if (!isFromNavigation) {
-      const validTabs = ['notes', 'resources', 'assignments'];
-      const newTab = tabParam && validTabs.includes(tabParam) ? tabParam : 'notes';
-      
-      if (activeTab !== newTab) {
-        setActiveTab(newTab);
-      }
-    }
     
     // Handle assignment ID parameter and taking assignment directly
     if (assignmentIdParam) {
@@ -120,7 +83,7 @@ const SubjectView = () => {
         setShowTakeAssignment(true);
       }
     }
-  }, [tabParam, assignmentIdParam, modeParam, location.state, activeTab]);
+  }, [assignmentIdParam, modeParam, location.state]);
 
   // When assignment is completed, close the page if opened in a new tab
   const handleAssignmentComplete = () => {
@@ -153,56 +116,18 @@ const SubjectView = () => {
   
   const hasWarnings = warnings.some(w => w.assignmentId && w.assignmentId.startsWith(subjectId));
   
-  console.log(`Rendering SubjectView with activeTab: ${activeTab}`);
-  
   return (
     <DashboardLayout title={subject.name}>
       <div className="mb-6">
-        <Tabs 
-          value={activeTab} 
-          defaultValue={activeTab} 
-          onValueChange={handleTabChange}
-        >
-          <TabsList>
-            <TabsTrigger value="notes" className="flex items-center gap-2">
-              <BookOpen size={16} />
-              <span>Notes</span>
-            </TabsTrigger>
-            <TabsTrigger value="resources" className="flex items-center gap-2">
-              <FileText size={16} />
-              <span>Resources</span>
-            </TabsTrigger>
-            <TabsTrigger value="assignments" className="flex items-center gap-2 relative">
-              <File size={16} />
-              <span>Assignments</span>
-              {hasWarnings && (
-                <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center">
-                  <AlertTriangle size={10} />
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="notes">
-            <NotesTab subject={subject} />
-          </TabsContent>
-
-          <TabsContent value="resources">
-            <ResourcesTab subject={subject} />
-          </TabsContent>
-          
-          <TabsContent value="assignments">
-            <AssignmentsTab 
-              subject={subject}
-              showTakeAssignment={showTakeAssignment}
-              setShowTakeAssignment={setShowTakeAssignment}
-              selectedAssignmentId={selectedAssignmentId}
-              setSelectedAssignmentId={setSelectedAssignmentId}
-              updateUrlParams={updateUrlParams}
-              onCompleteTakeAssignment={handleAssignmentComplete}
-            />
-          </TabsContent>
-        </Tabs>
+        <AssignmentsTab 
+          subject={subject}
+          showTakeAssignment={showTakeAssignment}
+          setShowTakeAssignment={setShowTakeAssignment}
+          selectedAssignmentId={selectedAssignmentId}
+          setSelectedAssignmentId={setSelectedAssignmentId}
+          updateUrlParams={updateUrlParams}
+          onCompleteTakeAssignment={handleAssignmentComplete}
+        />
       </div>
     </DashboardLayout>
   );
