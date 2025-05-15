@@ -16,4 +16,5 @@ export interface AssignmentSubmission {
   user?: User;  // Optional reference to the student
   plagiarismScore?: number; // Adding plagiarism score property
   plagiarismDetails?: PlagiarismDetail[]; // Adding plagiarism details property
+  questionCount?: number; // Adding questionCount property
 }
