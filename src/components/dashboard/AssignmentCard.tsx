@@ -6,7 +6,6 @@ import { Assignment } from '@/lib/interfaces/types';
 import { format } from 'date-fns';
 import { useToast } from '@/components/ui/use-toast';
 import { useAppContext } from '@/lib/context';
-import { getItem, STORAGE_KEYS } from '@/lib/local-storage';
 
 interface AssignmentCardProps {
   assignment: Assignment;
@@ -47,21 +46,12 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({
       return;
     }
     
-    // Get the current auth user to pass to the new tab
-    const authUser = getItem(STORAGE_KEYS.AUTH_USER, null);
-    
-    // Open the assignment in a new tab
-    const url = `/semester/${semesterId}/subject/${subjectId}?tab=assignments&assignmentId=${assignment.id}&mode=take`;
-    window.open(url, '_blank');
-    
-    // Store auth data in session storage for the new tab
-    if (authUser) {
-      sessionStorage.setItem('TEMP_AUTH_USER', JSON.stringify(authUser));
-    }
+    // Navigate to the assignment in the same tab
+    navigateToAssignment(subjectId, semesterId, assignment.id);
     
     toast({
       title: "Assignment opened",
-      description: "Continue your assignment in the new tab."
+      description: "Complete the assignment to get personalized recommendations."
     });
   };
   

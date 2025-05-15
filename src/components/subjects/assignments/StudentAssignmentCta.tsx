@@ -5,7 +5,7 @@ import { File, CheckCircle } from 'lucide-react';
 import { Assignment } from '@/lib/interfaces/types';
 import { useToast } from '@/components/ui/use-toast';
 import { useAppContext } from '@/lib/context';
-import { getItem, STORAGE_KEYS } from '@/lib/local-storage';
+import { useNavigate } from 'react-router-dom';
 
 interface StudentAssignmentCtaProps {
   assignments: Assignment[];
@@ -13,9 +13,11 @@ interface StudentAssignmentCtaProps {
 }
 
 const StudentAssignmentCta: React.FC<StudentAssignmentCtaProps> = ({ 
-  assignments
+  assignments,
+  onTakeAssignment
 }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { user, submissions } = useAppContext();
   const [submittedAssignments, setSubmittedAssignments] = useState<string[]>([]);
   
@@ -44,24 +46,12 @@ const StudentAssignmentCta: React.FC<StudentAssignmentCtaProps> = ({
       return;
     }
     
-    // Get the current auth user to pass to the new tab
-    const authUser = getItem(STORAGE_KEYS.AUTH_USER, null);
-    
-    // Create a URL with auth data in the state
-    const url = `/semester/1/subject/${assignment.subjectId}?tab=assignments&assignmentId=${assignment.id}&mode=take`;
-    
-    // Open the assignment in a new tab with the session data
-    const newWindow = window.open(url, '_blank');
-    
-    // Store auth data in session storage for the new tab
-    if (authUser) {
-      // Using sessionStorage which is shared across tabs from the same origin
-      sessionStorage.setItem('TEMP_AUTH_USER', JSON.stringify(authUser));
-    }
+    // Use the onTakeAssignment prop to open the assignment in the same tab
+    onTakeAssignment(assignment.id);
     
     toast({
       title: "Assignment opened",
-      description: "Continue your assignment in the new tab."
+      description: "Complete the assignment to get personalized recommendations."
     });
   };
   

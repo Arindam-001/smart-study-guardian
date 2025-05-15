@@ -11,7 +11,6 @@ import AssignmentResults from './results/AssignmentResults';
 import ViolationWarning from './warnings/ViolationWarning';
 import { useAssignmentSubmission } from './hooks/useAssignmentSubmission';
 import QuestionSection from './questions/QuestionSection';
-import { getItem, setItem, STORAGE_KEYS } from '@/lib/local-storage';
 
 interface TakeAssignmentProps {
   assignment: Assignment;
@@ -26,23 +25,7 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user, setUser } = useAppContext();
   
-  // Check for session storage auth data if no user is found
-  useEffect(() => {
-    if (!user) {
-      const sessionUser = sessionStorage.getItem('TEMP_AUTH_USER');
-      if (sessionUser) {
-        try {
-          const parsedUser = JSON.parse(sessionUser);
-          setUser(parsedUser);
-          setItem(STORAGE_KEYS.AUTH_USER, parsedUser);
-          // Clean up session storage
-          sessionStorage.removeItem('TEMP_AUTH_USER');
-        } catch (err) {
-          console.error('Error parsing session user:', err);
-        }
-      }
-    }
-  }, [user, setUser]);
+  // Skip authentication check - allow direct access to assignments
   
   const {
     videoRef,
@@ -68,22 +51,8 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
     streamRef,
     createWarning,
     onSubmitComplete: () => {
-      // After successful submission, close the window or redirect
-      if (window.opener && !window.opener.closed) {
-        // Notify the opener window that submission is complete
-        window.opener.postMessage({ 
-          type: 'ASSIGNMENT_SUBMITTED',
-          assignmentId: assignment.id
-        }, '*');
-        
-        // Close this window after a short delay
-        setTimeout(() => {
-          window.close();
-        }, 2000);
-      } else {
-        // If can't close, just call onComplete
-        onComplete();
-      }
+      // After successful submission, just call onComplete
+      onComplete();
     }
   });
 
