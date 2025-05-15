@@ -54,7 +54,9 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
     createWarning,
     onSubmitComplete: () => {
       // After successful submission, just call onComplete
-      onComplete();
+      if (onComplete) {
+        onComplete();
+      }
     }
   });
 
@@ -63,7 +65,7 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
     if (assignmentLocked && !submitted) {
       handleSubmit(true);
     }
-  }, [assignmentLocked, submitted]);
+  }, [assignmentLocked, submitted, handleSubmit]);
 
   // Track tab visibility changes
   useEffect(() => {
@@ -109,7 +111,12 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
           handlePrevQuestion={handlePrevQuestion}
           setCurrentQuestionIndex={setCurrentQuestionIndex}
           isSubmitting={isSubmitting}
-          onSubmit={() => handleSubmit(false)}
+          onSubmit={(e) => {
+            if (e) {
+              e.preventDefault(); // Prevent form submission from refreshing
+            }
+            handleSubmit(false);
+          }}
         />
       </div>
 

@@ -1,15 +1,15 @@
 
 import React from 'react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Assignment } from '@/lib/interfaces/types';
-import AssignmentTabs from '../tabs/AssignmentTabs';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { File, FileText } from 'lucide-react';
+import { Assignment, Question } from '@/lib/interfaces/types';
+import AssignmentEditor from '../AssignmentEditor';
 import QuestionSection from '../questions/QuestionSection';
 
 interface AssignmentContentProps {
   assignment: Assignment;
   currentQuestionIndex: number;
-  currentQuestion: any;
+  currentQuestion: Question;
   answers: Record<string, string>;
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -20,7 +20,7 @@ interface AssignmentContentProps {
   handlePrevQuestion: () => void;
   setCurrentQuestionIndex: (index: number) => void;
   isSubmitting: boolean;
-  onSubmit: () => void;
+  onSubmit: (e?: React.FormEvent) => void;
 }
 
 const AssignmentContent: React.FC<AssignmentContentProps> = ({
@@ -40,33 +40,21 @@ const AssignmentContent: React.FC<AssignmentContentProps> = ({
   onSubmit
 }) => {
   return (
-    <Card className="mb-4">
-      <CardHeader>
-        <CardTitle className="text-edu-primary">
-          {assignment.title}
-          {activeTab === 'questions' && (
-            <span className="ml-2">
-              - Question {currentQuestionIndex + 1} of {assignment.questions.length}
-            </span>
-          )}
-        </CardTitle>
-      </CardHeader>
+    <div className="bg-white p-4 rounded-lg shadow">
+      <h2 className="text-xl font-semibold mb-4">{assignment.title}</h2>
       
-      <CardContent>
-        <AssignmentTabs
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          currentQuestion={currentQuestion}
-          currentAnswer={answers[currentQuestion.id] || ''}
-          onAnswerChange={handleAnswerChange}
-          isLastQuestion={currentQuestionIndex === assignment.questions.length - 1}
-          fileInputRef={fileInputRef}
-          onFileChange={handleFileChange}
-        />
-      </CardContent>
-      
-      <CardFooter>
-        {activeTab === 'questions' ? (
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="questions">Questions</TabsTrigger>
+          <TabsTrigger value="word" className="flex items-center gap-1">
+            <File className="h-4 w-4" />MS Word
+          </TabsTrigger>
+          <TabsTrigger value="ppt" className="flex items-center gap-1">
+            <FileText className="h-4 w-4" />MS PowerPoint
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="questions">
           <QuestionSection 
             questions={assignment.questions}
             currentQuestionIndex={currentQuestionIndex}
@@ -81,18 +69,17 @@ const AssignmentContent: React.FC<AssignmentContentProps> = ({
             onFileChange={handleFileChange}
             onSubmit={onSubmit}
           />
-        ) : (
-          <div className="w-full flex justify-end">
-            <Button 
-              onClick={() => setActiveTab('questions')} 
-              variant="outline"
-            >
-              Back to Questions
-            </Button>
-          </div>
-        )}
-      </CardFooter>
-    </Card>
+        </TabsContent>
+        
+        <TabsContent value="word">
+          <AssignmentEditor onClose={() => setActiveTab('questions')} type="word" />
+        </TabsContent>
+        
+        <TabsContent value="ppt">
+          <AssignmentEditor onClose={() => setActiveTab('questions')} type="powerpoint" />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

@@ -19,7 +19,7 @@ interface AssignmentsTabProps {
   selectedAssignmentId: string | null;
   setSelectedAssignmentId: (id: string | null) => void;
   updateUrlParams: (tab: string, assignmentId?: string | null) => void;
-  onCompleteTakeAssignment?: () => void; // New prop
+  onCompleteTakeAssignment?: () => void; 
 }
 
 const AssignmentsTab: React.FC<AssignmentsTabProps> = ({ 

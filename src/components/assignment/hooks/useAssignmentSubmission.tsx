@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Assignment } from '@/lib/interfaces/types';
 import { useToast } from '@/components/ui/use-toast';
 import { useAppContext } from '@/lib/context';
@@ -11,7 +11,7 @@ interface UseAssignmentSubmissionProps {
   file: File | null;
   streamRef: React.MutableRefObject<MediaStream | null>;
   createWarning: (reason: string) => void;
-  onSubmitComplete?: () => void; // New callback for when submission is complete
+  onSubmitComplete?: () => void; // Optional callback for when submission is complete
 }
 
 export const useAssignmentSubmission = ({
@@ -39,7 +39,6 @@ export const useAssignmentSubmission = ({
         description: "Your answers will be submitted directly",
         variant: "default"
       });
-      return;
     }
     
     setIsSubmitting(true);
@@ -109,6 +108,7 @@ export const useAssignmentSubmission = ({
           description: "Failed to submit assignment",
           variant: "destructive"
         });
+        console.error("Assignment submission error:", error);
       } finally {
         setIsSubmitting(false);
         

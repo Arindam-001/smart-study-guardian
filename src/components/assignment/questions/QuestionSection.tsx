@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Question } from '@/lib/interfaces/types';
@@ -17,7 +18,7 @@ interface QuestionSectionProps {
   isSubmitting: boolean;
   fileInputRef: React.RefObject<HTMLInputElement>;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onSubmit: () => void;
+  onSubmit: (e?: React.FormEvent) => void;
 }
 
 const QuestionSection = ({
@@ -36,50 +37,59 @@ const QuestionSection = ({
 }: QuestionSectionProps) => {
   const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault(); // Prevent default form submission
+    onSubmit(e);
+  };
+
   return (
     <div className="w-full">
-      <div className="mb-4">
-        <QuestionDisplay 
-          question={currentQuestion}
-          answer={answers[currentQuestion.id] || ''}
-          onAnswerChange={onAnswerChange}
-        />
-        
-        {isLastQuestion && (
-          <FileUploadSection 
-            ref={fileInputRef} 
-            onFileChange={onFileChange} 
+      <form onSubmit={handleSubmit} className="w-full">
+        <div className="mb-4">
+          <QuestionDisplay 
+            question={currentQuestion}
+            answer={answers[currentQuestion.id] || ''}
+            onAnswerChange={onAnswerChange}
           />
-        )}
-      </div>
-      
-      <div className="flex justify-between mb-4">
-        <Button 
-          variant="outline" 
-          onClick={onPrevQuestion} 
-          disabled={currentQuestionIndex === 0}
-        >
-          Previous
-        </Button>
+          
+          {isLastQuestion && (
+            <FileUploadSection 
+              ref={fileInputRef} 
+              onFileChange={onFileChange} 
+            />
+          )}
+        </div>
         
-        {isLastQuestion ? (
+        <div className="flex justify-between mb-4">
           <Button 
-            onClick={onSubmit} 
-            className="bg-edu-primary"
-            disabled={isSubmitting}
+            type="button"
+            variant="outline" 
+            onClick={onPrevQuestion} 
+            disabled={currentQuestionIndex === 0}
           >
-            {isSubmitting ? "Submitting..." : "Submit Assignment"}
+            Previous
           </Button>
-        ) : (
-          <Button 
-            variant="default" 
-            onClick={onNextQuestion} 
-            className="bg-edu-primary"
-          >
-            Next
-          </Button>
-        )}
-      </div>
+          
+          {isLastQuestion ? (
+            <Button 
+              type="submit"
+              className="bg-edu-primary"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? "Submitting..." : "Submit Assignment"}
+            </Button>
+          ) : (
+            <Button 
+              type="button"
+              variant="default" 
+              onClick={onNextQuestion} 
+              className="bg-edu-primary"
+            >
+              Next
+            </Button>
+          )}
+        </div>
+      </form>
       
       <QuestionNavigation 
         questions={questions}
