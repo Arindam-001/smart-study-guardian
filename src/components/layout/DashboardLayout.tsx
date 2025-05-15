@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAppContext } from '@/lib/context';
@@ -7,7 +8,6 @@ import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
-  NavigationMenuLink,
   NavigationMenuList,
   NavigationMenuTrigger,
 } from '@/components/ui/navigation-menu';
@@ -125,16 +125,17 @@ const DashboardLayout: React.FC<DashboardLayoutProps> = ({ children, title }) =>
                 <NavigationMenuList>
                   {routes.map((route) => (
                     <NavigationMenuItem key={route.path}>
-                      <Link to={route.path}>
-                        <NavigationMenuLink
-                          className={cn(
-                            "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus:outline-none focus:bg-accent focus:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none bg-background hover:bg-accent hover:text-accent-foreground px-4 py-2",
-                            location.pathname.startsWith(route.path) ? "bg-accent text-accent-foreground" : ""
-                          )}
-                        >
+                      <NavigationMenuLink
+                        asChild
+                        className={cn(
+                          "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus:outline-none focus:bg-accent focus:text-accent-foreground disabled:opacity-50 disabled:pointer-events-none bg-background hover:bg-accent hover:text-accent-foreground px-4 py-2",
+                          location.pathname.startsWith(route.path) ? "bg-accent text-accent-foreground" : ""
+                        )}
+                      >
+                        <Link to={route.path}>
                           {route.label}
-                        </NavigationMenuLink>
-                      </Link>
+                        </Link>
+                      </NavigationMenuLink>
                     </NavigationMenuItem>
                   ))}
                 </NavigationMenuList>

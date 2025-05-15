@@ -11,7 +11,7 @@ const ReturnToAdminPanel = () => {
   const adminUser = getItem('ADMIN_USER_BACKUP', null);
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isAuthenticated } = useAppContext();
+  const { isAuthenticated, setUser } = useAppContext();
   
   // Don't show the panel if not authenticated or no admin backup
   if (!adminUser || !isAuthenticated) {
@@ -21,6 +21,8 @@ const ReturnToAdminPanel = () => {
   const handleReturnToAdmin = () => {
     // Restore the admin user
     setItem(STORAGE_KEYS.AUTH_USER, adminUser);
+    // Update the context
+    setUser(adminUser);
     // Clear the backup
     removeItem('ADMIN_USER_BACKUP');
     
