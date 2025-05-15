@@ -1,25 +1,29 @@
 
-import { useState } from 'react';
 import { useCamera } from './useCamera';
 import { useFaceDetection } from './useFaceDetection';
 import { useMovementDetection } from './useMovementDetection';
 import { useProctoringEvents } from './useProctoringEvents';
-import { useWarningManager } from './useWarningManager';
+import { useProctoringState } from './useProctoringState';
 
 export const useProctoring = (assignmentId: string) => {
-  const [isActive] = useState(true);
-  
-  const { hasWarning, tabSwitchCount, deviceDetected, setDeviceDetected, assignmentLocked, createWarning } = 
-    useWarningManager({ 
-      assignmentId, 
-      onLockAssignment: () => {} // This will be handled by the TakeAssignment component
-    });
+  // Use the proctoring state hook to manage the state
+  const {
+    isActive,
+    hasWarning,
+    tabSwitchCount,
+    deviceDetected,
+    setDeviceDetected,
+    assignmentLocked,
+    createWarning
+  } = useProctoringState(assignmentId);
 
+  // Use the camera hook
   const { videoRef, streamRef } = useCamera({
     onCameraError: () => createWarning("Camera access denied"),
     isActive
   });
 
+  // Use the face detection hook
   useFaceDetection({
     onMultipleFacesDetected: () => {
       setDeviceDetected(true);
@@ -29,6 +33,7 @@ export const useProctoring = (assignmentId: string) => {
     isActive
   });
 
+  // Use the movement detection hook
   const { movementCount } = useMovementDetection({
     onExcessiveMovement: () => createWarning("Excessive movement detected"),
     onOtherPersonDetected: () => {
@@ -38,6 +43,7 @@ export const useProctoring = (assignmentId: string) => {
     isActive
   });
 
+  // Use the proctoring events hook
   useProctoringEvents({
     onTabSwitching: () => createWarning("Tab switching detected"),
     onCopyAttempt: () => createWarning("Copy attempt detected"),
