@@ -1,9 +1,9 @@
 
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { Assignment } from '@/lib/interfaces/types';
-import { useToast } from '@/components/ui/use-toast';
 import { useAppContext } from '@/lib/context';
-import { generateYouTubeRecommendations } from '../utils/recommendationUtils';
+import { usePerformanceTracking } from './usePerformanceTracking';
+import { useSubmission } from './useSubmission';
 
 interface UseAssignmentSubmissionProps {
   assignment: Assignment;
@@ -11,7 +11,7 @@ interface UseAssignmentSubmissionProps {
   file: File | null;
   streamRef: React.MutableRefObject<MediaStream | null>;
   createWarning: (reason: string) => void;
-  onSubmitComplete?: () => void; // New callback for when submission is complete
+  onSubmitComplete?: () => void;
 }
 
 export const useAssignmentSubmission = ({
@@ -22,12 +22,9 @@ export const useAssignmentSubmission = ({
   createWarning,
   onSubmitComplete
 }: UseAssignmentSubmissionProps) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-  const [performance, setPerformance] = useState<any>(null);
-  const [youtubeRecommendations, setYoutubeRecommendations] = useState<any[]>([]);
-  const { toast } = useToast();
   const { user, submitAssignment } = useAppContext();
+  const { isSubmitting, submitted, startSubmission, completeSubmission, setSubmitting } = useSubmission();
+  const { performance, youtubeRecommendations, processPerformanceResults, toast } = usePerformanceTracking();
 
   const handleSubmit = (autoSubmitted: boolean = false) => {
     if (!user) return;
@@ -42,7 +39,7 @@ export const useAssignmentSubmission = ({
       return;
     }
     
-    setIsSubmitting(true);
+    startSubmission();
     
     // In a real app, we would upload the file to storage and get a URL
     // For now, we'll just simulate a file URL
@@ -76,19 +73,13 @@ export const useAssignmentSubmission = ({
         
         // Submit and get recommendations
         const results = submitAssignment(assignment.id, user.id, answers, mockFileUrl);
-        setPerformance(results);
-        
-        // Generate YouTube recommendations based on performance
-        const recommendations = generateYouTubeRecommendations(results);
-        setYoutubeRecommendations(recommendations);
+        const { recommendations } = processPerformanceResults(results);
         
         toast({
           title: autoSubmitted ? "Assignment Auto-Submitted" : "Assignment Submitted",
           description: `Your score: ${results.score}/${assignment.questions.length}. Check your recommendations!`,
           variant: autoSubmitted ? "destructive" : "default"
         });
-        
-        setSubmitted(true);
         
         // Notify that the assignment was submitted to teacher
         toast({
@@ -103,6 +94,8 @@ export const useAssignmentSubmission = ({
             onSubmitComplete();
           }, 5000);
         }
+        
+        completeSubmission();
       } catch (error) {
         toast({
           title: "Error",
@@ -110,7 +103,7 @@ export const useAssignmentSubmission = ({
           variant: "destructive"
         });
       } finally {
-        setIsSubmitting(false);
+        setSubmitting(false);
         
         // Stop the camera stream
         if (streamRef.current) {
