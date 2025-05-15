@@ -48,11 +48,6 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({
     
     // Navigate to the assignment in the same tab
     navigateToAssignment(subjectId, semesterId, assignment.id);
-    
-    toast({
-      title: "Assignment opened",
-      description: "Complete the assignment to get personalized recommendations."
-    });
   };
   
   return (

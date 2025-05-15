@@ -39,21 +39,14 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   const [assignmentToDelete, setAssignmentToDelete] = useState<string | null>(null);
   
   const isTeacherOrAdmin = user?.role === 'teacher' || user?.role === 'admin';
-  const hasWarnings = warnings.some(w => w.assignmentId.startsWith(subject.id));
+  const hasWarnings = warnings.some(w => w.assignmentId && w.assignmentId.startsWith(subject.id));
   
   // Get subject assignments
   const subjectAssignments = assignments.filter(a => a.subjectId === subject.id);
   const selectedAssignment = selectedAssignmentId ? 
     subjectAssignments.find(a => a.id === selectedAssignmentId) : 
-    subjectAssignments[0];
+    null;
   
-  const handleAssignmentCreated = () => {
-    toast({
-      title: "Assignment created",
-      description: "The assignment has been successfully created."
-    });
-  };
-
   const handleDeleteConfirm = () => {
     if (assignmentToDelete) {
       const success = deleteAssignment(assignmentToDelete);
@@ -86,6 +79,7 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   };
 
   const handleTakeAssignment = (assignmentId: string) => {
+    console.log("Taking assignment:", assignmentId);
     setShowTakeAssignment(true);
     setSelectedAssignmentId(assignmentId);
     updateUrlParams('assignments', assignmentId);
@@ -97,6 +91,7 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   };
 
   const handleAssignmentComplete = () => {
+    console.log("Assignment completed");
     if (onCompleteTakeAssignment) {
       onCompleteTakeAssignment();
     } else {
@@ -126,6 +121,7 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
   }
   
   if (showTakeAssignment && selectedAssignment) {
+    console.log("Showing take assignment component for:", selectedAssignment.id);
     return (
       <TakeAssignment 
         assignment={selectedAssignment}
@@ -148,7 +144,7 @@ const AssignmentsTab: React.FC<AssignmentsTabProps> = ({
         <AssignmentCreationControls
           subject={subject}
           hasWarnings={hasWarnings}
-          onCreateClick={handleAssignmentCreated}
+          onCreateClick={() => setShowCreateAssignment(true)}
         />
       )}
       

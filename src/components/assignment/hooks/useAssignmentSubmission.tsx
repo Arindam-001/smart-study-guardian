@@ -29,7 +29,12 @@ export const useAssignmentSubmission = ({
   const { toast } = useToast();
   const { user, submitAssignment } = useAppContext();
 
-  const handleSubmit = (autoSubmitted: boolean = false) => {
+  const handleSubmit = (autoSubmitted: boolean = false, event?: React.FormEvent) => {
+    // Prevent form submission from refreshing the page
+    if (event) {
+      event.preventDefault();
+    }
+    
     if (!user) return;
     
     // Skip file validation if it's auto-submitted due to violations

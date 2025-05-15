@@ -44,7 +44,7 @@ const StudentAssignmentCta: React.FC<StudentAssignmentCtaProps> = ({
       return;
     }
     
-    // Use the onTakeAssignment prop to open the assignment
+    // Call the onTakeAssignment handler to open the assignment
     onTakeAssignment(assignment.id);
   };
   

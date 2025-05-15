@@ -12,8 +12,6 @@ import AssignmentResults from './results/AssignmentResults';
 const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
   const { user } = useAppContext();
   
-  // Skip authentication check - allow direct access to assignments
-  
   const {
     currentQuestionIndex,
     setCurrentQuestionIndex,
@@ -111,12 +109,7 @@ const TakeAssignment = ({ assignment, onComplete }: TakeAssignmentProps) => {
           handlePrevQuestion={handlePrevQuestion}
           setCurrentQuestionIndex={setCurrentQuestionIndex}
           isSubmitting={isSubmitting}
-          onSubmit={(e) => {
-            if (e) {
-              e.preventDefault(); // Prevent form submission from refreshing
-            }
-            handleSubmit(false);
-          }}
+          onSubmit={(e) => handleSubmit(false, e)}
         />
       </div>
 
